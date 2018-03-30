@@ -4,11 +4,13 @@
 template <class T>
 class StTree{
     vector<T> arr;
+    unsigned int size;
 public:
-    void init(int size);
-    void initialize(int ind, T val);
+    void init(unsigned int _size_);
     void update(int ind, T val);
-    void get(int ind);
+    void getVal(int ind);
+    T getTotalval();
+    int getLowerBound(T val);
 };
 
 #endif
