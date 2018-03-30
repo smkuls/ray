@@ -7,8 +7,10 @@
 
 using namespace std;
 
+const LOAD_DECAY_RATE = 0.5;
+
 /// The class encapsulates state information for Falcon global scheduler
-class FalconSchedulerAlgorithm {
+class FulcrumSchedulerAlgorithm {
 public:
     unordered_map<DBClientID, int> lsLoadMap;
     vector<DBClientID> reverseLsLoadMap;
@@ -19,15 +21,6 @@ public:
     DBClientID findLsByWeightedLoad();
 private:
 
-};
-
-/**
- * Create the state of the global scheduler policy. This state must be freed by
- * the caller.
- *
- * @return The state of the scheduling policy.
- */
-GlobalSchedulerPolicyState *GlobalSchedulerPolicyState_init(void);
-
+} fulcrumSchdAlgo;
 
 #endif /* FULCRUM_SCHEDULER_ALGORITHM_H */
