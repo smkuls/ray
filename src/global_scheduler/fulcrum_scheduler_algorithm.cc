@@ -1,5 +1,6 @@
 #include "fulcrum_scheduler_algorithm.h"
 #include "st_tree.h"
+#include <stdlib.h> 
 
 /**
  * Function goes through the local scheduler load map and exponentially decays the load values
@@ -7,9 +8,9 @@
  * @param
  * @return void
  */
-void refreshLsLoadMap() {
-    for(auto x : fulcrumSchdAlgo.lsLoadMap){
-        fulcrumSchdAlgo.lsLoadMap[x->first] = x->second*LOAD_DECAY_RATE;
+void refreshLsLoad() {
+    for(auto x : fulcrumSchdAlgo.lsIndexMap){
+        fulcrumSchdAlgo.lsLoadStTree.update(x->second, (int)(lsLoadStTree.getVal(x->second) * LOAD_DECAY_RATE));
     }
 }
 
@@ -19,19 +20,20 @@ void refreshLsLoadMap() {
  * @param
  * @return void
  */
-void updateLsLoadMap(DBClientID localSchdID) {
-    fulcrumSchdAlgo.lsLoadMap[localSchdID] = fulcrumSchdAlgo.lsLoadMap[localSchdID] + 1;
+void updateLsLoad(DBClientID localSchdID) {
+    int ind = fulcrumSchdAlgo.lsIndexMap[localSchdID];
+    fulcrumSchdAlgo.lsLoadStTree.update(ind, lsLoadStTree.getVal(ind) + 1);
 }
 
 /**
  * Function finds the local scheduler node based on weighted load value
  *
  * @param
- * @return void
+ * @return DBClientID
  */
 DBClientID findLsByWeightedLoad() {
-    int rand = rand() % fulcrumSchdAlgo.lsLoadStTree.getTotalVal();
-    return fulcrumSchdAlgo.reverseLsLoadMap(fulcrumSchdAlgo.lsLoadStTree.getVal(rand));
+    int rand = rand() % (fulcrumSchdAlgo.lsLoadStTree.getTotalVal()+1);
+    return fulcrumSchdAlgo.reverseLsIndexMap[fulcrumSchdAlgo.lsLoadStTree.getLowerBound(rand)];
 }
 
 
