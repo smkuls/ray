@@ -2,16 +2,21 @@
 #define FULCRUM_SCHEDULER_ALGORITHM_H
 
 #include <random>
-#include <bits/stdc++.h>
+#include <map>
+#include <vector>
 
 using namespace std;
 
 /// The class encapsulates state information for Falcon global scheduler
 class FalconSchedulerAlgorithm {
 public:
-    unordered_map<id, int> localMap;
+    unordered_map<DBClientID, int> lsLoadMap;
+    vector<DBClientID> reverseLsLoadMap;
+    StTree<int> lsLoadStTree;
 
-
+    void refreshLsLoadMap();
+    void updateLsLoadMap(DBClientID id);
+    DBClientID findLsByWeightedLoad();
 private:
 
 };
