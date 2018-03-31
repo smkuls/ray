@@ -2,6 +2,10 @@
 
 #include "task.h"
 #include "state/task_table.h"
+#include <chrono>
+
+using namespace std;
+using namespace std::chrono;
 
 #include "global_scheduler_algorithm.h"
 
@@ -127,6 +131,13 @@ double calculate_cost_pending(const GlobalSchedulerState *state,
 bool handle_task_waiting_random(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
+
+  RAY_LOG(INFO) << "#########################################################";
+  RAY_LOG(INFO) << "TASK CAME TO GLOBAL SCHEDULER";
+  RAY_LOG(INFO) << "#########################################################";
+
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
   RAY_CHECK(task_spec != NULL)
       << "task wait handler encounted a task with NULL spec";
@@ -146,6 +157,14 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
   if (feasible_nodes.size() == 0) {
     RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
                    << "task = " << Task_task_id(task);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<nanoseconds>( t2 - t1 ).count();
+
+    RAY_LOG(INFO) << "#######################################################";
+    RAY_LOG(INFO) << "INFEASIBLE TASK SCHEDULING OVERHEAD";
+    RAY_LOG(INFO) << ">>>>>>>>>" << duration;
+    RAY_LOG(INFO) << "#######################################################";
+
     return false;
   }
 
@@ -158,6 +177,14 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
       << "Task is feasible, but doesn't have a local scheduler assigned.";
   // A local scheduler ID was found, so assign the task.
   assign_task_to_local_scheduler(state, task, local_scheduler_id);
+  
+  high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  auto duration = duration_cast<nanoseconds>( t2 - t1 ).count();
+  RAY_LOG(INFO) << "#######################################################";
+  RAY_LOG(INFO) << "FEASIBLE TASK SCHEDULING OVERHEAD";
+  RAY_LOG(INFO) << ">>>>>>>>>" << duration;
+  RAY_LOG(INFO) << "#######################################################";
+  
   return true;
 }
 
