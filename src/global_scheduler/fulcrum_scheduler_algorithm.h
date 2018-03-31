@@ -1,28 +1,27 @@
 #ifndef FULCRUM_SCHEDULER_ALGORITHM_H
 #define FULCRUM_SCHEDULER_ALGORITHM_H
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unordered_map>
 #include <vector>
-#include "st_tree.h"
 
 using namespace std;
+
+typedef int DBClientID;
 
 const double LOAD_DECAY_RATE = 0.5;
 
 /// The class encapsulates state information for Falcon global scheduler
 class FulcrumSchedulerAlgorithm {
 public:
-    unordered_map<DBClientID, int> lsIndexMap;
-    vector<DBClientID> reverseLsIndexMap;
-    StTree<int> lsLoadStTree;
-
-    void init_size(int size);
+    unordered_map<DBClientID, int> lsLoadMap;
     void registerLs(DBClientID id);
     void refreshLsLoad();
     void updateLsLoad(DBClientID id);
-    DBClientID findLsByWeightedLoad();
+    DBClientID findLsByWeightedLoad(vector<DBClientID> &candidates);
+    void printWeights();
 private:
 };
 

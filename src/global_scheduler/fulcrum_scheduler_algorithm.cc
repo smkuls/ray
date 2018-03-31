@@ -1,18 +1,7 @@
 #include "fulcrum_scheduler_algorithm.h"
-#include "st_tree.h"
 #include <stdlib.h> 
 #include <assert.h>
 
-/**
- * Function initializes the data structures for given number of machines
- *
- * @param size = number of local scheduler nodes
- * @return void
- */
-void FulcrumSchedulerAlgorithm::init_size(int size) {
-    reverseLsIndexMap.resize(size);
-    lsLoadStTree.init(size);
-}
 
 /**
  * Function to register a DBClientID of a local scheduler 
@@ -21,11 +10,8 @@ void FulcrumSchedulerAlgorithm::init_size(int size) {
  * @return void
  */
 void FulcrumSchedulerAlgorithm::registerLs(DBClientID id) {
-    if(lsIndexMap.find(id) == lsIndexMap.end()){
-        int nid = lsIndexMap.size();
-        lsIndexMap[id] = nid;
-        assert(reverseLsIndexMap.size() > nid);
-        reverseLsIndexMap[nid] = id;
+    if(lsLoadMap.find(id) == lsLoadMap.end()){
+        lsLoadMap[id] = 0;
     }
 }
 
@@ -36,8 +22,8 @@ void FulcrumSchedulerAlgorithm::registerLs(DBClientID id) {
  * @return void
  */
 void FulcrumSchedulerAlgorithm::refreshLsLoad() {
-    for(auto x : lsIndexMap){
-        lsLoadStTree.update(x.second, (int)(lsLoadStTree.getVal(x.second) * LOAD_DECAY_RATE));
+    for(auto x : lsLoadMap){
+        lsLoadMap[x.first] = (int)(x.second * LOAD_DECAY_RATE);
     }
 }
 
@@ -48,8 +34,7 @@ void FulcrumSchedulerAlgorithm::refreshLsLoad() {
  * @return void
  */
 void FulcrumSchedulerAlgorithm::updateLsLoad(DBClientID localSchdID) {
-    int ind = lsIndexMap[localSchdID];
-    lsLoadStTree.update(ind, lsLoadStTree.getVal(ind) + 1);
+    lsLoadMap[localSchdID] += 1;
 }
 
 /**
@@ -58,9 +43,36 @@ void FulcrumSchedulerAlgorithm::updateLsLoad(DBClientID localSchdID) {
  * @param
  * @return DBClientID
  */
-DBClientID FulcrumSchedulerAlgorithm::findLsByWeightedLoad() {
-    int randind = rand() % (lsLoadStTree.getTotalVal()+1);
-    return reverseLsIndexMap[lsLoadStTree.getLowerBound(randind)];
+DBClientID FulcrumSchedulerAlgorithm::findLsByWeightedLoad(vector<DBClientID> &candidates) {
+    int totalWt = 0, maxWt = 1;
+    for(DBClientID id : candidates){
+        int load = lsLoadMap[id];
+        totalWt += load;
+        maxWt = std::max(maxWt, load+1);
+    }
+    totalWt = maxWt * candidates.size() - totalWt;
+    int randval = rand() % totalWt;
+    int cumsum = 0, ind = 0;
+    while(ind < candidates.size() && cumsum <= randval){
+        cumsum += (maxWt - lsLoadMap[candidates[ind]]);
+        ind++; 
+    }
+    return candidates[ind-1];
 }
 
+
+/**
+ * Function prints the weights of all local schedulers, weight = max_wt + 1 - load
+ *
+ * @param
+ * @return void
+ */
+void FulcrumSchedulerAlgorithm::printWeights() {
+    int maxWt = 1;
+    for(auto x: lsLoadMap)
+        maxWt = std::max(maxWt, x.second+1);
+    for(auto x: lsLoadMap)
+        std::cout<<x.first<<"->"<<maxWt - x.second<<" ";
+    std::cout<<std::endl;
+}
 
