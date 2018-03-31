@@ -53,7 +53,7 @@ DBClientID FulcrumSchedulerAlgorithm::findLsByWeightedLoad(vector<DBClientID> &c
     totalWt = maxWt * candidates.size() - totalWt;
     int randval = rand() % totalWt;
     int cumsum = 0, ind = 0;
-    while(ind < candidates.size() && cumsum <= randval){
+    while((unsigned int)ind < candidates.size() && cumsum <= randval){
         cumsum += (maxWt - lsLoadMap[candidates[ind]]);
         ind++; 
     }

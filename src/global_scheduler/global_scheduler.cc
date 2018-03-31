@@ -6,6 +6,7 @@
 #include "event_loop.h"
 #include "global_scheduler.h"
 #include "global_scheduler_algorithm.h"
+#include "fulcrum_scheduler_algorithm.h"
 #include "net.h"
 #include "state/db_client_table.h"
 #include "state/local_scheduler_table.h"
@@ -150,6 +151,7 @@ GlobalSchedulerState *GlobalSchedulerState_init(event_loop *loop,
                                          redis_primary_port, client_info));
   RAY_CHECK_OK(state->gcs_client.context()->AttachToEventLoop(loop));
   state->policy_state = GlobalSchedulerPolicyState_init();
+  state->fsa = new FulcrumSchedulerAlgorithm();
   return state;
 }
 

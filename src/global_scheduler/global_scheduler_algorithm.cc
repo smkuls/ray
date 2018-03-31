@@ -127,6 +127,9 @@ double calculate_cost_pending(const GlobalSchedulerState *state,
 bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
+  /* Update Fulcrum data structures */
+  state->fsa->updateLsLoad(task->local_scheduler_id);
+ 
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
   RAY_CHECK(task_spec != NULL)
       << "task wait handler encounted a task with NULL spec";
@@ -152,8 +155,9 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
   // Randomly select the local scheduler. TODO(atumanov): replace with
   // std::discrete_distribution<int>.
   std::uniform_int_distribution<> dis(0, feasible_nodes.size() - 1);
-  DBClientID local_scheduler_id =
-      feasible_nodes[dis(policy_state->getRandomGenerator())];
+  DBClientID local_scheduler_id = state->fsa->findLsByWeightedLoad(feasible_nodes);
+  //DBClientID local_scheduler_id = 
+  //    feasible_nodes[dis(policy_state->getRandomGenerator())];
   RAY_CHECK(!local_scheduler_id.is_nil())
       << "Task is feasible, but doesn't have a local scheduler assigned.";
   // A local scheduler ID was found, so assign the task.

@@ -4,10 +4,10 @@
 #include "task.h"
 
 #include <unordered_map>
-#include "fulcrum_scheduler_algorithm.h"
 #include "ray/gcs/client.h"
 #include "state/db.h"
 #include "state/local_scheduler_table.h"
+#include "fulcrum_scheduler_algorithm.h"
 
 /* The frequency with which the global scheduler checks if there are any tasks
  * that haven't been scheduled yet. */
@@ -32,6 +32,7 @@ typedef struct {
 } LocalScheduler;
 
 typedef class GlobalSchedulerPolicyState GlobalSchedulerPolicyState;
+typedef class FulcrumSchedulerAlgorithm FulcrumSchedulerAlgorithm;
 
 /**
  * This defines a hash table used to cache information about different objects.
@@ -70,7 +71,7 @@ typedef struct {
   /** An array of tasks that haven't been scheduled yet. */
   std::vector<Task *> pending_tasks;
   /** Fulcrum scheduler */
-  FulcrumSchedulerAlgorithm fsa;
+  FulcrumSchedulerAlgorithm *fsa;
 } GlobalSchedulerState;
 
 /**
