@@ -124,6 +124,45 @@ double calculate_cost_pending(const GlobalSchedulerState *state,
   return cost_pending;
 }
 
+bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
+                                GlobalSchedulerPolicyState *policy_state,
+                                Task *task) {
+  TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
+  RAY_CHECK(task_spec != NULL)
+      << "task wait handler encounted a task with NULL spec";
+
+  std::vector<DBClientID> feasible_nodes;
+
+  for (const auto &it : state->local_schedulers) {
+    // Local scheduler map iterator yields <DBClientID, LocalScheduler> pairs.
+    const LocalScheduler &local_scheduler = it.second;
+    if (!constraints_satisfied_hard(&local_scheduler, task_spec)) {
+      continue;
+    }
+    // Add this local scheduler as a candidate for random selection.
+    feasible_nodes.push_back(it.first);
+  }
+
+  if (feasible_nodes.size() == 0) {
+    RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
+                   << "task = " << Task_task_id(task);
+    return false;
+  }
+
+  // Randomly select the local scheduler. TODO(atumanov): replace with
+  // std::discrete_distribution<int>.
+  std::uniform_int_distribution<> dis(0, feasible_nodes.size() - 1);
+  DBClientID local_scheduler_id =
+      feasible_nodes[dis(policy_state->getRandomGenerator())];
+  RAY_CHECK(!local_scheduler_id.is_nil())
+      << "Task is feasible, but doesn't have a local scheduler assigned.";
+  // A local scheduler ID was found, so assign the task.
+  assign_task_to_local_scheduler(state, task, local_scheduler_id);
+  return true;
+}
+
+
+
 bool handle_task_waiting_random(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
@@ -235,7 +274,8 @@ bool handle_task_waiting_cost(GlobalSchedulerState *state,
 bool handle_task_waiting(GlobalSchedulerState *state,
                          GlobalSchedulerPolicyState *policy_state,
                          Task *task) {
-  return handle_task_waiting_random(state, policy_state, task);
+  //return handle_task_waiting_random(state, policy_state, task);
+  return handle_task_waiting_fulcrum(state, policy_state, task);
 }
 
 void handle_object_available(GlobalSchedulerState *state,

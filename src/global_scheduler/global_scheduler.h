@@ -4,7 +4,7 @@
 #include "task.h"
 
 #include <unordered_map>
-
+#include "fulcrum_scheduler_algorithm.h"
 #include "ray/gcs/client.h"
 #include "state/db.h"
 #include "state/local_scheduler_table.h"
@@ -69,6 +69,8 @@ typedef struct {
       scheduler_object_info_table;
   /** An array of tasks that haven't been scheduled yet. */
   std::vector<Task *> pending_tasks;
+  /** Fulcrum scheduler */
+  FulcrumSchedulerAlgorithm fsa;
 } GlobalSchedulerState;
 
 /**
