@@ -1,9 +1,11 @@
 #ifndef FULCRUM_SCHEDULER_ALGORITHM_H
 #define FULCRUM_SCHEDULER_ALGORITHM_H
 
-#include <random>
-#include <map>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unordered_map>
 #include <vector>
+#include "st_tree.h"
 
 using namespace std;
 
@@ -16,11 +18,12 @@ public:
     vector<DBClientID> reverseLsIndexMap;
     StTree<int> lsLoadStTree;
 
+    void init_size(int size);
+    void registerLs(DBClientID id);
     void refreshLsLoad();
     void updateLsLoad(DBClientID id);
     DBClientID findLsByWeightedLoad();
 private:
-
-} fulcrumSchdAlgo;
+};
 
 #endif /* FULCRUM_SCHEDULER_ALGORITHM_H */
