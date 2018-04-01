@@ -5,6 +5,12 @@
 #git clone https://github.com/smkuls/ray
 #cd ~/ray/python
 #sudo -H pip install -e . --verbose
+sudo apt-get update
+
+# Clone and build ray
+#git clone https://github.com/smkuls/ray
+#cd ~/ray/python
+#sudo -H pip install -e . --verbose
 
 # Clone roboschool and install dependencies
 cd ~
