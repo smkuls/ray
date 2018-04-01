@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <iostream>
 
 #include "task.h"
 #include "state/task_table.h"
@@ -127,6 +128,7 @@ double calculate_cost_pending(const GlobalSchedulerState *state,
 bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
+  std::cout<<"Global Fulcrum scheduler invoked"<<std::endl;
   /* Update Fulcrum data structures */
   state->fsa->updateLsLoad(task->local_scheduler_id);
  
