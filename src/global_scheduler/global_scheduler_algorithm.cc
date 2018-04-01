@@ -132,10 +132,6 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
 
-  RAY_LOG(INFO) << "#########################################################";
-  RAY_LOG(INFO) << "TASK CAME TO GLOBAL SCHEDULER";
-  RAY_LOG(INFO) << "#########################################################";
-
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
@@ -160,11 +156,6 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     auto duration = duration_cast<nanoseconds>( t2 - t1 ).count();
 
-    RAY_LOG(INFO) << "#######################################################";
-    RAY_LOG(INFO) << "INFEASIBLE TASK SCHEDULING OVERHEAD";
-    RAY_LOG(INFO) << ">>>>>>>>>" << duration;
-    RAY_LOG(INFO) << "#######################################################";
-
     return false;
   }
 
@@ -180,10 +171,7 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
   
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   auto duration = duration_cast<nanoseconds>( t2 - t1 ).count();
-  RAY_LOG(INFO) << "#######################################################";
-  RAY_LOG(INFO) << "FEASIBLE TASK SCHEDULING OVERHEAD";
-  RAY_LOG(INFO) << ">>>>>>>>>" << duration;
-  RAY_LOG(INFO) << "#######################################################";
+  RAY_LOG(INFO) << duration;
   
   return true;
 }
