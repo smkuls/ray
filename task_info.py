@@ -35,4 +35,4 @@ with open(output_file_name, "w+") as file_handle:
 
 
 with open(worker_utilization_file_name, "w+") as file_handle:
-    file_handle.write(pprint.pprint(worker_utilization))
+    file_handle.write(pprint.pformat(worker_utilization))
