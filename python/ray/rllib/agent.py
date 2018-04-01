@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import os
 import pickle
+import roboschool
 
 import tensorflow as tf
 from ray.tune.registry import ENV_CREATOR
