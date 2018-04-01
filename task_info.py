@@ -7,9 +7,6 @@ output_file_name = sys.argv[2]
 worker_utilization_file_name = sys.argv[3]
 
 num_tasks = 10000000
-if len(sys.argv) >= 4:
-    num_tasks = sys.argv[3]
-
 
 ray.init(redis_address=redis_address)
 
