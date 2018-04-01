@@ -1794,6 +1794,17 @@ void print_worker_info(const char *message,
                  << " available, " << algorithm_state->executing_workers.size()
                  << " executing, " << algorithm_state->blocked_workers.size()
                  << " blocked";
+
+  int64_t cumulative_tasks = 0;
+  RAY_LOG(INFO) << "Printing task counters for worker:";
+  for(auto x : algorithm_state->local_actor_infos) {
+    for (auto y : x.second.task_counters){
+      RAY_LOG(INFO) << "Task counters inside actors" << y.second;
+      cumulative_tasks += y.second;
+    }
+  }
+  RAY_LOG(INFO) << "Cumulative task counters for worker = "<< cumulative_tasks;
+
 }
 
 std::unordered_map<ActorHandleID, int64_t, UniqueIDHasher>
