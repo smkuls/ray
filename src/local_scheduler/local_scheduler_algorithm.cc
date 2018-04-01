@@ -937,6 +937,9 @@ void dispatch_tasks(LocalSchedulerState *state,
     /* Dequeue the task. */
     it = algorithm_state->dispatch_task_queue->erase(it);
   } /* End for each task in the dispatch queue. */
+  
+  // print task stats for this worker
+  print_worker_info();
 }
 
 /**
@@ -1185,7 +1188,7 @@ void give_task_to_local_scheduler(LocalSchedulerState *state,
                                   TaskExecutionSpec &execution_spec,
                                   DBClientID local_scheduler_id) {
   if (local_scheduler_id == get_db_client_id(state->db)) {
-    RAY_LOG(WARNING) << "Local scheduler is trying to assign a task to itself.";
+    RAY_LOG(INFO) << "Local scheduler is trying to assign a task to itself.";
   }
   RAY_CHECK(state->db != NULL);
   /* Assign the task to the relevant local scheduler. */
@@ -1248,6 +1251,7 @@ void give_task_to_global_scheduler(LocalSchedulerState *state,
       .fail_callback = give_task_to_global_scheduler_retry,
   };
   task_table_add_task(state->db, task, &retryInfo, NULL, state);
+  RAY_LOG(INFO) << "Local scheduler is trying to assign task to global scheduler.";
 #else
   RAY_CHECK_OK(TaskTableAdd(&state->gcs_client, task));
   Task_free(task);
@@ -1786,7 +1790,7 @@ int num_dispatch_tasks(SchedulingAlgorithmState *algorithm_state) {
 
 void print_worker_info(const char *message,
                        SchedulingAlgorithmState *algorithm_state) {
-  RAY_LOG(DEBUG) << message << ": " << algorithm_state->available_workers.size()
+  RAY_LOG(INFO) << message << ": " << algorithm_state->available_workers.size()
                  << " available, " << algorithm_state->executing_workers.size()
                  << " executing, " << algorithm_state->blocked_workers.size()
                  << " blocked";
