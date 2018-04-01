@@ -153,9 +153,6 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
   if (feasible_nodes.size() == 0) {
     RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
                    << "task = " << Task_task_id(task);
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<nanoseconds>( t2 - t1 ).count();
-
     return false;
   }
 
