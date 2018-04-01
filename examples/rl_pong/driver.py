@@ -80,6 +80,11 @@ def policy_backward(eph, epx, epdlogp, model):
 
 
 @ray.remote
+def pong_task(model):
+    pe = PongEnv()
+    return pe.compute_gradient(model)
+    
+
 class PongEnv(object):
     def __init__(self):
         # Tell numpy to only use one core. If we don't do this, each actor may
@@ -170,17 +175,18 @@ if __name__ == "__main__":
     grad_buffer = {k: np.zeros_like(v) for k, v in model.items()}
     # Update the rmsprop memory.
     rmsprop_cache = {k: np.zeros_like(v) for k, v in model.items()}
-    actors = [PongEnv.remote() for _ in range(batch_size)]
+    #actors = [PongEnv.remote() for _ in range(batch_size)]
     iteration = 0
     while iteration != args.iterations:
         iteration += 1
         model_id = ray.put(model)
-        actions = []
         # Launch tasks to compute gradients from multiple rollouts in parallel.
         start_time = time.time()
-        for i in range(batch_size):
-            action_id = actors[i].compute_gradient.remote(model_id)
-            actions.append(action_id)
+	actions = [pong_task.remote(model) for _ in range(batch_size)]
+        #actions = []
+        #for i in range(batch_size):
+        #    action_id = actors[i].compute_gradient.remote(model_id)
+        #    actions.append(action_id)
         for i in range(batch_size):
             action_id, actions = ray.wait(actions)
             grad, reward_sum = ray.get(action_id[0])

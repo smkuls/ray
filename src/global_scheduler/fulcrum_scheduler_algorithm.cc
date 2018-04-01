@@ -34,7 +34,7 @@ void FulcrumSchedulerAlgorithm::refreshLsLoad() {
  * @return void
  */
 void FulcrumSchedulerAlgorithm::updateLsLoad(DBClientID localSchdID) {
-    lsLoadMap[localSchdID] += 1;
+    //lsLoadMap[localSchdID] += 1;
 }
 
 /**

@@ -422,7 +422,7 @@ def task_timeline():
 
     path_input.on_click(handle_submit)
 
-
+distr = []
 def task_completion_time_distribution():
     from bokeh.models import ColumnDataSource
     from bokeh.layouts import gridplot
@@ -463,6 +463,7 @@ def task_completion_time_distribution():
                                     abs_latest,
                                     abs_num_tasks,
                                     tasks):
+	global distr
         if len(tasks) == 0:
             return
 

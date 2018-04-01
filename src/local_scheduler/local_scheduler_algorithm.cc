@@ -1118,6 +1118,7 @@ void queue_task_locally(LocalSchedulerState *state,
 void give_task_to_local_scheduler_retry(UniqueID id,
                                         void *user_context,
                                         void *user_data) {
+  RAY_LOG(INFO) << "Local scheduler is retrying to assign a task directly to another local scheduler \n";
   LocalSchedulerState *state = (LocalSchedulerState *) user_context;
   Task *task = (Task *) user_data;
   RAY_CHECK(Task_state(task) == TASK_STATUS_SCHEDULED);
@@ -1184,6 +1185,7 @@ void give_task_to_local_scheduler(LocalSchedulerState *state,
                                   SchedulingAlgorithmState *algorithm_state,
                                   TaskExecutionSpec &execution_spec,
                                   DBClientID local_scheduler_id) {
+  RAY_LOG(INFO) << "Local scheduler is trying to assign a task directly to another local scheduler \n";
   if (local_scheduler_id == get_db_client_id(state->db)) {
     RAY_LOG(WARNING) << "Local scheduler is trying to assign a task to itself.";
   }

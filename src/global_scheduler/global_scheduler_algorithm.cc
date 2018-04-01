@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <iostream>
 
 #include "task.h"
 #include "state/task_table.h"
@@ -127,6 +128,7 @@ double calculate_cost_pending(const GlobalSchedulerState *state,
 bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
+  RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting_fulcrum invoked \n";
   /* Update Fulcrum data structures */
   state->fsa->updateLsLoad(task->local_scheduler_id);
  
@@ -148,7 +150,7 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
 
   if (feasible_nodes.size() == 0) {
     RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
-                   << "task = " << Task_task_id(task);
+                   << "task = " << Task_task_id(task) << "\n";
     return false;
   }
 
@@ -170,6 +172,7 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
 bool handle_task_waiting_random(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
                                 Task *task) {
+  RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting_random invoked \n";
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
   RAY_CHECK(task_spec != NULL)
       << "task wait handler encounted a task with NULL spec";
@@ -207,6 +210,7 @@ bool handle_task_waiting_random(GlobalSchedulerState *state,
 bool handle_task_waiting_cost(GlobalSchedulerState *state,
                               GlobalSchedulerPolicyState *policy_state,
                               Task *task) {
+  RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting_cost invoked \n";
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
   int64_t curtime = current_time_ms();
 
@@ -231,7 +235,7 @@ bool handle_task_waiting_cost(GlobalSchedulerState *state,
       << "We might have a floating point underflow";
   RAY_LOG(INFO) << "ct[" << curtime << "] task from "
                 << task->local_scheduler_id << " spillback "
-                << task->execution_spec->SpillbackCount();
+                << task->execution_spec->SpillbackCount() << "\n";
 
   // The best node to send this task.
   DBClientID best_local_scheduler_id = DBClientID::nil();
@@ -254,7 +258,7 @@ bool handle_task_waiting_cost(GlobalSchedulerState *state,
     RAY_LOG(INFO) << "ct[" << curtime << "][" << scheduler->id << "][q"
                   << scheduler->info.task_queue_length << "][w"
                   << scheduler->info.available_workers << "]: score " << score
-                  << " bestscore " << best_local_scheduler_score;
+                  << " bestscore " << best_local_scheduler_score << "\n";
     if (score >= best_local_scheduler_score) {
       best_local_scheduler_score = score;
       best_local_scheduler_id = scheduler->id;
@@ -278,6 +282,7 @@ bool handle_task_waiting_cost(GlobalSchedulerState *state,
 bool handle_task_waiting(GlobalSchedulerState *state,
                          GlobalSchedulerPolicyState *policy_state,
                          Task *task) {
+  RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting invoked \n";
   //return handle_task_waiting_random(state, policy_state, task);
   return handle_task_waiting_fulcrum(state, policy_state, task);
 }
