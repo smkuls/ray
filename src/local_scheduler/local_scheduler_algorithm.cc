@@ -939,7 +939,7 @@ void dispatch_tasks(LocalSchedulerState *state,
   } /* End for each task in the dispatch queue. */
   
   // print task stats for this worker
-  print_worker_info();
+  print_worker_info("Local Scheduler Debug", algorithm_state);
 }
 
 /**
