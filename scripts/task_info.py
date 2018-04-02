@@ -1,5 +1,4 @@
 import ray
-import pprint
 import sys
 
 redis_address = sys.argv[1]
@@ -18,7 +17,8 @@ worker_utilization = {}
 
 for task_profile in task_profiles.items():
     worker_id = task_profile[1]["worker_id"]
-    worker_ip_address = ray.global_state.workers()[worker_id]["node_ip_address"]
+    worker_ip_address = (ray.global_state.workers()
+                         [worker_id]["node_ip_address"])
     if worker_ip_address not in worker_utilization:
         worker_utilization[worker_ip_address] = 0
     else:
@@ -32,4 +32,4 @@ with open(output_file_name, "w+") as file_handle:
 
 
 with open(worker_utilization_file_name, "w+") as file_handle:
-    file_handle.write(pprint.pformat(worker_utilization))
+    file_handle.write("\n".join(map(str, list(worker_utilization.values()))))
