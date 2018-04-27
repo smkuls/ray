@@ -168,6 +168,68 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
 }
 
 
+bool handle_task_waiting_sparrow(GlobalSchedulerState *state,
+                                GlobalSchedulerPolicyState *policy_state,
+                                Task *task) {
+  RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting_sparrow invoked \n";
+  TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
+  RAY_CHECK(task_spec != NULL)
+      << "task wait handler encounted a task with NULL spec";
+
+  std::vector<DBClientID> feasible_nodes;
+
+  for (const auto &it : state->local_schedulers) {
+    // Local scheduler map iterator yields <DBClientID, LocalScheduler> pairs.
+    const LocalScheduler &local_scheduler = it.second;
+    if (!constraints_satisfied_hard(&local_scheduler, task_spec)) {
+      continue;
+    }
+    // Add this local scheduler as a candidate for random selection.
+    feasible_nodes.push_back(it.first);
+  }
+
+  if (feasible_nodes.size() == 0) {
+    RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
+                   << "task = " << Task_task_id(task);
+    return false;
+  }
+
+  std::uniform_int_distribution<> dis(0, feasible_nodes.size() - 1);
+  DBClientID local_scheduler_id1 =
+      feasible_nodes[dis(policy_state->getRandomGenerator())];
+
+  DBClientID local_scheduler_id2;
+  while (UniqueIDHasher{}(local_scheduler_id2  = feasible_nodes[dis(policy_state->getRandomGenerator())])
+            != UniqueIDHasher{}(local_scheduler_id1));
+
+  DBClientID best_scheduler_id;
+  auto scheduler1_info = (state->local_schedulers)[local_scheduler_id1].info;
+  auto scheduler2_info = (state->local_schedulers)[local_scheduler_id2].info;
+
+  if (scheduler1_info.task_queue_length == scheduler2_info.task_queue_length)
+  {
+    float scheduler1_score = (float)scheduler1_info.available_workers
+                                / (float)scheduler1_info.total_num_workers;
+    float scheduler2_score = (float)scheduler2_info.available_workers
+                                / (float)scheduler2_info.total_num_workers;
+    best_scheduler_id = scheduler1_score > scheduler2_score ?
+                          local_scheduler_id1 : local_scheduler_id2;
+  }
+  else if (scheduler1_info.task_queue_length > scheduler2_info.task_queue_length)
+  {
+    best_scheduler_id = local_scheduler_id2;
+  }
+  else
+  {
+    best_scheduler_id = local_scheduler_id1;
+  }
+  RAY_CHECK(!best_scheduler_id.is_nil())
+      << "Task is feasible, but doesn't have a local scheduler assigned.";
+  // A local scheduler ID was found, so assign the task.
+  assign_task_to_local_scheduler(state, task, best_scheduler_id);
+  return true;
+}
+
 
 bool handle_task_waiting_random(GlobalSchedulerState *state,
                                 GlobalSchedulerPolicyState *policy_state,
