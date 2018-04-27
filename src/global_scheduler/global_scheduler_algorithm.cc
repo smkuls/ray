@@ -346,6 +346,7 @@ bool handle_task_waiting(GlobalSchedulerState *state,
                          Task *task) {
   RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting invoked \n";
   //return handle_task_waiting_random(state, policy_state, task);
+  // return handle_task_waiting_fulcrum(state, policy_state, task);
   return handle_task_waiting_fulcrum(state, policy_state, task);
 }
 
