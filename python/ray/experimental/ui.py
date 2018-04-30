@@ -463,7 +463,7 @@ def task_completion_time_distribution():
                                     abs_latest,
                                     abs_num_tasks,
                                     tasks):
-	global distr
+        global distr
         if len(tasks) == 0:
             return
 
