@@ -13,6 +13,8 @@ from ray.tune.registry import ENV_CREATOR
 from ray.tune.result import TrainingResult
 from ray.tune.trainable import Trainable
 
+import roboschool
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
