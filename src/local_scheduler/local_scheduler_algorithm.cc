@@ -877,8 +877,8 @@ void spillback_tasks_handler(LocalSchedulerState *state) {
         push_error(state->db, TaskSpec_driver_id(spec),
                    ACTOR_NOT_CREATED_ERROR_INDEX, error_message.str());
       }
-    } 
-    if(it->SpillbackCount() <= MAXSPILLBACKCOUNT){
+    }
+    if(true || it->SpillbackCount() <= MAXSPILLBACKCOUNT){
     	give_task_to_global_scheduler(state, algorithm_state, *it);
     	// Dequeue the task.
     	it = algorithm_state->dispatch_task_queue->erase(it);
@@ -941,7 +941,7 @@ void dispatch_tasks(LocalSchedulerState *state,
     /* Dequeue the task. */
     it = algorithm_state->dispatch_task_queue->erase(it);
   } /* End for each task in the dispatch queue. */
-  
+
   // print task stats for this worker
   print_worker_info("Local Scheduler Debug", algorithm_state);
 }
