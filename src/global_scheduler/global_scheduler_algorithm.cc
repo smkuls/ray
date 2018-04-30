@@ -131,7 +131,7 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
   RAY_LOG(INFO)<<"Global Scheduler handle_task_waiting_fulcrum invoked \n";
   /* Update Fulcrum data structures */
   state->fsa->updateLsLoad(task->local_scheduler_id);
- 
+
   TaskSpec *task_spec = Task_task_execution_spec(task)->Spec();
   RAY_CHECK(task_spec != NULL)
       << "task wait handler encounted a task with NULL spec";
@@ -158,7 +158,7 @@ bool handle_task_waiting_fulcrum(GlobalSchedulerState *state,
   // std::discrete_distribution<int>.
   std::uniform_int_distribution<> dis(0, feasible_nodes.size() - 1);
   DBClientID local_scheduler_id = state->fsa->findLsByWeightedLoad(feasible_nodes);
-  //DBClientID local_scheduler_id = 
+  //DBClientID local_scheduler_id =
   //    feasible_nodes[dis(policy_state->getRandomGenerator())];
   RAY_CHECK(!local_scheduler_id.is_nil())
       << "Task is feasible, but doesn't have a local scheduler assigned.";
@@ -206,22 +206,38 @@ bool handle_task_waiting_sparrow(GlobalSchedulerState *state,
   auto scheduler1_info = (state->local_schedulers)[local_scheduler_id1].info;
   auto scheduler2_info = (state->local_schedulers)[local_scheduler_id2].info;
 
+  auto hashedValue1 = UniqueIDHasher{}(local_scheduler_id1);
+  auto hashedValue2 = UniqueIDHasher{}(local_scheduler_id2);
+
+  RAY_LOG(INFO)<<hashedValue1<<" "<<scheduler1_info.task_queue_length
+               <<" "<<scheduler1_info.available_workers
+               <<" "<<scheduler1_info.total_num_workers;
+
+  RAY_LOG(INFO)<<hashedValue2<<" "<<scheduler2_info.task_queue_length
+               <<" "<<scheduler2_info.available_workers
+               <<" "<<scheduler2_info.total_num_workers;
+
   if (scheduler1_info.task_queue_length == scheduler2_info.task_queue_length)
   {
+
     float scheduler1_score = (float)scheduler1_info.available_workers
                                 / (float)scheduler1_info.total_num_workers;
     float scheduler2_score = (float)scheduler2_info.available_workers
                                 / (float)scheduler2_info.total_num_workers;
     best_scheduler_id = scheduler1_score > scheduler2_score ?
                           local_scheduler_id1 : local_scheduler_id2;
+
+    RAY_LOG(INFO)<<"Both are equal! 1: "<<scheduler1_score<<" 2: "<<scheduler2_score;
   }
   else if (scheduler1_info.task_queue_length > scheduler2_info.task_queue_length)
   {
     best_scheduler_id = local_scheduler_id2;
+    RAY_LOG(INFO)<<"2 is better! "<<hashedValue2;
   }
   else
   {
     best_scheduler_id = local_scheduler_id1;
+    RAY_LOG(INFO)<<"1 is better! "<<hashedValue2;
   }
   RAY_CHECK(!best_scheduler_id.is_nil())
       << "Task is feasible, but doesn't have a local scheduler assigned.";
