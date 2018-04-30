@@ -178,6 +178,7 @@ if __name__ == "__main__":
     #actors = [PongEnv.remote() for _ in range(batch_size)]
     iteration = 0
     num_stragglers = 2 # should be 2% of the cluster nodes
+
     while iteration != args.iterations:
         iteration += 1
         model_id = ray.put(model)
@@ -199,7 +200,11 @@ if __name__ == "__main__":
 
             # skip the stragglers
             if i >= (batch_size-num_stragglers):
-                break
+                print("Batch {} computed {} rollouts in {} seconds, "
+                      "running mean is {}".format(batch_num, batch_size-num_stragglers,
+                                                  time.time() - start_time,
+                                                  running_reward))
+                #break
         end_time = time.time()
         print("Batch {} computed {} rollouts in {} seconds, "
               "running mean is {}".format(batch_num, batch_size-num_stragglers,
