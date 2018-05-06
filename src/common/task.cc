@@ -425,7 +425,7 @@ TaskExecutionSpec::TaskExecutionSpec(
     const std::vector<ObjectID> &execution_dependencies,
     const TaskSpec *spec,
     int64_t task_spec_size)
-    : TaskExecutionSpec(execution_dependencies, spec, task_spec_size, 0, INT_MAX) {}
+    : TaskExecutionSpec(execution_dependencies, spec, task_spec_size, 0, 4096) {}
 
 TaskExecutionSpec::TaskExecutionSpec(TaskExecutionSpec *other)
     : execution_dependencies_(other->execution_dependencies_),
