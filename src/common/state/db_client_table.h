@@ -82,6 +82,11 @@ const std::vector<std::string> db_client_table_get_ip_addresses(
     DBHandle *db,
     const std::vector<DBClientID> &manager_ids);
 
+
+void db_client_table_update_cache_callback(DBClient *db_client,
+                                           void *user_context);
+
+
 /**
  * Initialize the db client cache. The cache is updated with each notification
  * from the db client table.

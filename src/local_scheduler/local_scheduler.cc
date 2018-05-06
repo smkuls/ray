@@ -1450,6 +1450,7 @@ void process_new_db_client(DBClient *db_client, void *user_context) {
       }
     }
   }
+  db_client_table_update_cache_callback(db_client, state->db);
 }
 
 
@@ -1486,8 +1487,8 @@ void start_server(
    * needs to also get all of the clients that registered with the database
    * before this call to subscribe. */
   std::cout<<"Local scheduler: subscribing to db client table "<<(g_state == NULL) << std::endl;
-  //db_client_table_subscribe(g_state->db, process_new_db_client,
-  //                          (void *) g_state, NULL, NULL, NULL);
+  db_client_table_subscribe(g_state->db, process_new_db_client,
+                            (void *) g_state, NULL, NULL, NULL);
 
   /* Register a callback for registering new clients. */
   event_loop_add_file(loop, fd, EVENT_LOOP_READ, new_client_connection,
@@ -1521,7 +1522,7 @@ void start_server(
   }
   /* Listen for new and deleted db clients. */
   if (g_state->db != NULL) {
-    db_client_table_cache_init(g_state);
+    //db_client_table_cache_init(g_state);
   }
   /* Create a timer for fetching queued tasks' missing object dependencies. */
   event_loop_add_timer(
