@@ -1,0 +1,190 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"virtualMachineAdminUserName": {
+			"defaultValue": "azure-user",
+			"type": "string",
+			"metadata": {
+				"description": "Administrator Username for the local admin account"
+			}
+		},
+		"virtualMachineAdminPassword": {
+			"type": "securestring",
+			"metadata": {
+				"description": "Administrator password for the local admin account"
+			}
+		},
+		"virtualMachineNamePrefix": {
+			"defaultValue": "ray-auto-vm",
+			"type": "string",
+			"maxLength": 15,
+			"metadata": {
+				"description": "Name of the virtual machine to be created"
+			}
+		},
+		"virtualMachineCount": {
+			"type": "int",
+			"defaultValue": 2,
+			"metadata": {
+				"description": "Number of  virtual machines to be created"
+			}
+		},
+		"startIdx": {
+			"type": "int",
+			"defaultValue": 1,
+			"metadata": {
+				"description": "Starting index of VM Name"
+			}
+		},
+		"virtualMachineSize": {
+			"type": "string",
+			"defaultValue": "Standard_B1s",
+			"metadata": {
+				"description": "Virtual Machine Size"
+			}
+		},
+		"operatingSystem": {
+			"type": "string",
+			"defaultValue": "Ubuntu",
+			"metadata": {
+				"description": "Operating System of the Server"
+			}
+		},
+		"dnsPrefixForPublicIP": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 14,
+			"defaultValue": "ray-dns",
+			"metadata": {
+				"description": "Globally unique DNS prefix for the Public IPs used to access the Virtual Machines"
+			}
+		}
+	},
+	"variables": {
+		"myVNETName": "ray-auto-vnet",
+		"myVNETPrefix": "10.0.0.0/16",
+		"myVNETSubnet1Name": "Subnet1",
+		"myVNETSubnet1Prefix": "10.0.0.0/24",
+		"managedImageId": "[resourceId('cs525', 'Microsoft.Compute/images', 'ray-vm-image-after-setup')]",
+		"operatingSystemValues": {
+			"Ubuntu": {
+				"PublisherValue": "Canonical",
+				"OfferValue": "UbuntuServer",
+				"SkuValue": "16.04-LTS"
+			}
+		},
+		"vnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('myVNETName'))]",
+		"subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('myVNETSubnet1Name'))]"
+	},
+	"resources": [{
+			"name": "[variables('myVNETName')]",
+			"type": "Microsoft.Network/virtualNetworks",
+			"location": "[resourceGroup().location]",
+			"apiVersion": "2016-03-30",
+			"dependsOn": [],
+			"tags": {
+				"displayName": "[variables('myVNETName')]"
+			},
+			"properties": {
+				"addressSpace": {
+					"addressPrefixes": [
+						"[variables('myVNETPrefix')]"
+					]
+				},
+				"subnets": [{
+					"name": "[variables('myVNETSubnet1Name')]",
+					"properties": {
+						"addressPrefix": "[variables('myVNETSubnet1Prefix')]"
+					}
+				}]
+			}
+		},
+		{
+			"type": "Microsoft.Compute/virtualMachines",
+			"name": "[concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')))]",
+			"apiVersion": "2017-03-30",
+			"location": "[resourceGroup().location]",
+			"copy": {
+				"name": "VMcopy",
+				"count": "[parameters('virtualMachineCount')]"
+			},
+			"properties": {
+				"hardwareProfile": {
+					"vmSize": "[parameters('virtualMachineSize')]"
+				},
+				"storageProfile": {
+					"imageReference": {
+						"id": "[variables('managedImageId')]"
+					}
+				},
+				"osProfile": {
+					"computerName": "[concat(parameters('virtualMachineNamePrefix'),copyIndex(parameters('startIdx')))]",
+					"adminUsername": "[parameters('virtualMachineAdminUserName')]",
+					"secrets": [],
+					"adminPassword": "[parameters('virtualMachineAdminPassword')]"
+				},
+				"networkProfile": {
+					"networkInterfaces": [{
+						"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-NIC1'))]"
+					}]
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-NIC1'))]"
+			]
+		},
+		{
+			"type": "Microsoft.Network/networkInterfaces",
+			"name": "[concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-NIC1')]",
+			"apiVersion": "2016-03-30",
+			"location": "[resourceGroup().location]",
+			"copy": {
+				"name": "NICCopy",
+				"count": "[parameters('virtualMachineCount')]"
+			},
+			"properties": {
+				"ipConfigurations": [{
+					"name": "ipconfig1",
+					"properties": {
+						"privateIPAllocationMethod": "Dynamic",
+						"publicIPAddress": {
+							"id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-PIP1'))]"
+						},
+						"subnet": {
+							"id": "[variables('subnetRef')]"
+						}
+					}
+				}],
+				"dnsSettings": {
+					"dnsServers": []
+				},
+				"enableIPForwarding": false
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-PIP1'))]",
+				"[resourceId('Microsoft.Network/virtualNetworks/', variables('myVNETName'))]"
+			]
+		},
+		{
+			"apiVersion": "2016-03-30",
+			"type": "Microsoft.Network/publicIPAddresses",
+			"name": "[concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-PIP1')]",
+			"location": "[resourceGroup().location]",
+			"copy": {
+				"name": "PIPCopy",
+				"count": "[parameters('virtualMachineCount')]"
+			},
+			"tags": {
+				"displayName": "[concat(parameters('virtualMachineNamePrefix'), copyIndex(parameters('startIdx')), '-PIP1')]"
+			},
+			"properties": {
+				"publicIPAllocationMethod": "Dynamic",
+				"dnsSettings": {
+					"domainNameLabel": "[concat(parameters('dnsPrefixForPublicIP'), copyIndex(parameters('startIdx')))]"
+				}
+			}
+		}
+	],
+	"outputs": {}
+}

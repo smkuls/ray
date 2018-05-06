@@ -1,0 +1,3 @@
+sh run_script.sh 1 "ray-rg-2" "rebuild_ray.sh"
+sh run_script.sh 1 "ray-rg-2" "build_and_install.sh"
+sh manage_vms.sh 1 'ray-rg-2' "deallocate"
