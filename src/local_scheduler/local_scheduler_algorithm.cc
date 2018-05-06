@@ -1246,6 +1246,9 @@ void give_task_to_local_scheduler(LocalSchedulerState *state,
   if (local_scheduler_id == get_db_client_id(state->db)) {
     RAY_LOG(INFO) << "Local scheduler is trying to assign a task to itself.";
   }
+
+  std::cout<<"give_task_to_local_scheduler, spillback: "<<execution_spec.LastLoad()<<" : "<<execution_spec.SpillbackCount()<<std::endl; 
+ 
   RAY_CHECK(state->db != NULL);
   /* Assign the task to the relevant local scheduler. */
   RAY_CHECK(state->config.global_scheduler_exists);
@@ -1373,7 +1376,7 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
   int load = execution_spec.LastLoad();
   execution_spec.UpdateLastLoad(currload);
 
-  std::cout<<"sending task to random local worker, load: "<<load<<", currload: "<<currload<<std::endl;
+  std::cout<<"sending task to random local worker, load: "<<load<<", currload: "<<currload<<" : spillback: "<<execution_spec.SpillbackCount()<<std::endl;
 
   //if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
   if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS) {

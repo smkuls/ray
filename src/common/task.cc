@@ -403,7 +403,7 @@ int getFirstInt(int c){
   return (c>>16);
 }
 int getSecondInt(int c){
-  return ((1 << 16) & c);
+  return (((1 << 16) - 1) & c);
 }
 
 TaskExecutionSpec::TaskExecutionSpec(

@@ -2,11 +2,20 @@
 
 namespace ray {
 
+int combineTwoInts_raylet(int a, int b){
+  return (a<<16) + b;
+}
+int getFirstInt_raylet(int c){
+  return (c>>16);
+}
+int getSecondInt_raylet(int c){
+  return (((1 << 16)-1) & c);
+}
 TaskExecutionSpecification::TaskExecutionSpecification(
     const std::vector<ObjectID> &&execution_dependencies)
     : execution_dependencies_(std::move(execution_dependencies)),
       last_timestamp_(0),
-      spillback_count_(0) {}
+      spillback_count_(combineTwoInts_raylet(4096, 0)) {}
 
 TaskExecutionSpecification::TaskExecutionSpecification(
     const std::vector<ObjectID> &&execution_dependencies, int spillback_count)
@@ -23,9 +32,22 @@ void TaskExecutionSpecification::SetExecutionDependencies(
   execution_dependencies_ = dependencies;
 }
 
-int TaskExecutionSpecification::SpillbackCount() const { return spillback_count_; }
+
+int TaskExecutionSpecification::SpillbackCount() const { 
+std::cout<<"raylet invoked" <<std::endl;
+return getSecondInt_raylet(spillback_count_); }
 
 void TaskExecutionSpecification::IncrementSpillbackCount() { ++spillback_count_; }
+
+int TaskExecutionSpecification::LastLoad() const {
+  return getFirstInt_raylet(spillback_count_);
+}
+
+void TaskExecutionSpecification::UpdateLastLoad(int load) {
+  int ss= getSecondInt_raylet(spillback_count_);
+  spillback_count_ = combineTwoInts_raylet(load, ss);
+}
+
 
 int64_t TaskExecutionSpecification::LastTimeStamp() const { return last_timestamp_; }
 

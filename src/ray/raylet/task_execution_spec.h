@@ -49,6 +49,11 @@ class TaskExecutionSpecification {
   /// Increment the spillback count for this task.
   void IncrementSpillbackCount();
 
+  /// \return The spillback count for this task.
+  int LastLoad() const;
+
+  /// Increment the spillback count for this task.
+  void UpdateLastLoad(int load);
   /// Get the task's last timestamp.
   ///
   /// \return The timestamp when this task was last received for scheduling.
