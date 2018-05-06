@@ -93,7 +93,7 @@ class PongEnv(object):
         # OpenBLAS, then you need to set OPENBLAS_NUM_THREADS=1, and you
         # probably need to do it from the command line (so it happens before
         # numpy is imported).
-        os.environ["MKL_NUM_THREADS"] = "1"
+        os.environ["MKL_NUM_THREADS"] = "2"
         self.env = gym.make("Pong-v0")
 
     def compute_gradient(self, model):
