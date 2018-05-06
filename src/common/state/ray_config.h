@@ -112,7 +112,7 @@ class RayConfig {
         redis_db_connect_wait_milliseconds_(100),
         plasma_default_release_delay_(64),
         L3_cache_size_bytes_(100000000),
-        max_tasks_to_spillback_(10),
+        max_tasks_to_spillback_(0),
         actor_creation_num_spillbacks_warning_(100) {}
 
   ~RayConfig() {}

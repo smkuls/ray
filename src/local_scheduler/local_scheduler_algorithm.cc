@@ -398,6 +398,7 @@ void handle_convert_worker_to_actor(
     const ActorID &actor_id,
     const ObjectID &initial_execution_dependency,
     LocalSchedulerClient *worker) {
+  std::cout<<"handle_convert_worker_to_actor"<<std::endl;
   if (algorithm_state->local_actor_infos.count(actor_id) == 0) {
     create_actor(algorithm_state, actor_id, initial_execution_dependency,
                  worker);
@@ -460,6 +461,7 @@ void finish_killed_task(LocalSchedulerState *state,
 void insert_actor_task_queue(LocalSchedulerState *state,
                              SchedulingAlgorithmState *algorithm_state,
                              TaskExecutionSpec task_entry) {
+  std::cout<<"insert_actor_task_queue"<<std::endl;
   TaskSpec *spec = task_entry.Spec();
   /* Get the local actor entry for this actor. */
   ActorID actor_id = TaskSpec_actor_id(spec);
@@ -735,6 +737,7 @@ bool object_locally_available(SchedulingAlgorithmState *algorithm_state,
 
 /* TODO(swang): This method is not covered by any valgrind tests. */
 int fetch_object_timeout_handler(event_loop *loop, timer_id id, void *context) {
+  std::cout<<"fetch_object_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -796,6 +799,7 @@ int fetch_object_timeout_handler(event_loop *loop, timer_id id, void *context) {
 int reconstruct_object_timeout_handler(event_loop *loop,
                                        timer_id id,
                                        void *context) {
+  std::cout<<"reconstruct_object_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -846,6 +850,7 @@ int reconstruct_object_timeout_handler(event_loop *loop,
 int rerun_actor_creation_tasks_timeout_handler(event_loop *loop,
                                                timer_id id,
                                                void *context) {
+  std::cout<<"rerun_actor_creation_tasks_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -894,6 +899,7 @@ bool resources_available(LocalSchedulerState *state) {
 }
 
 void spillback_tasks_handler(LocalSchedulerState *state) {
+  std::cout<<"spillback_tasks_handler"<<std::endl;
   SchedulingAlgorithmState *algorithm_state = state->algorithm_state;
 
   int64_t num_to_spillback = std::min(
@@ -1252,6 +1258,8 @@ void give_task_to_local_scheduler(LocalSchedulerState *state,
       .fail_callback = give_task_to_local_scheduler_retry,
   };
 
+  std::cout<<"comes in give_task_to_local_scheduler"<<std::endl;
+
   task_table_add_task(state->db, task, &retryInfo, NULL, state);
 #else
   RAY_CHECK_OK(TaskTableAdd(&state->gcs_client, task));
@@ -1347,15 +1355,16 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
     // Add this local scheduler as a candidate for random selection.
     feasible_nodes.push_back(it.first);
   }
-
-  std::cout<<"Feasible_nodes.size/allnodes.size: "<<feasible_nodes.size()<<"/"<<state->local_schedulers.size()<<std::endl;
- 
   if (feasible_nodes.size() == 0) {
     RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
                    <<  "\n";
     return false;
   }
-  DBClientID local_scheduler_id = feasible_nodes[rand() % feasible_nodes.size()];
+
+  int ind = rand() % feasible_nodes.size();
+  DBClientID local_scheduler_id = feasible_nodes[ind];
+
+  std::cout<<"Feasible_nodes.size/allnodes.size: "<<feasible_nodes.size()<<"/"<<state->local_schedulers.size()<<" : chosen node: "<<ind<<std::endl;
 
   int64_t waiting_task_queue_length = algorithm_state->waiting_task_queue->size();
   int64_t dispatch_task_queue_length = algorithm_state->dispatch_task_queue->size();
@@ -1366,7 +1375,8 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
 
   std::cout<<"sending task to random local worker, load: "<<load<<", currload: "<<currload<<std::endl;
 
-  if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
+  //if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
+  if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS) {
     //!TODO this will have to be changed, it should be random
     queue_task_locally(state, algorithm_state, execution_spec, false);
     /* Try to dispatch tasks, since we may have added one to the queue. */
@@ -1390,6 +1400,9 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
 void handle_task_submitted(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            TaskExecutionSpec &execution_spec) {
+    
+  std::cout<<"handle_task_submitted"<<std::endl;
+  
   TaskSpec *spec = execution_spec.Spec();
   /* TODO(atumanov): if static is satisfied and local objects ready, but dynamic
    * resource is currently unavailable, then consider queueing task locally and
@@ -1428,6 +1441,7 @@ void handle_task_submitted(LocalSchedulerState *state,
 void handle_actor_task_submitted(LocalSchedulerState *state,
                                  SchedulingAlgorithmState *algorithm_state,
                                  TaskExecutionSpec &execution_spec) {
+  std::cout<<"handle_actor_task_submitted"<<std::endl;
   TaskSpec *task_spec = execution_spec.Spec();
   RAY_CHECK(TaskSpec_is_actor_task(task_spec));
   ActorID actor_id = TaskSpec_actor_id(task_spec);
@@ -1482,6 +1496,7 @@ void handle_actor_creation_notification(
     LocalSchedulerState *state,
     SchedulingAlgorithmState *algorithm_state,
     ActorID actor_id) {
+  std::cout<<"handle_actor_creation_notification"<<std::endl;
   int num_cached_actor_tasks =
       algorithm_state->cached_submitted_actor_tasks.size();
 
@@ -1501,6 +1516,7 @@ void handle_actor_creation_notification(
 void handle_task_scheduled(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            TaskExecutionSpec &execution_spec) {
+  std::cout<<"handle_task_scheduled"<<std::endl;
   /* This callback handles tasks that were assigned to this local scheduler by
    * the global scheduler, so we can safely assert that there is a connection to
    * the database. */
@@ -1519,6 +1535,7 @@ void handle_task_scheduled(LocalSchedulerState *state,
 void handle_actor_task_scheduled(LocalSchedulerState *state,
                                  SchedulingAlgorithmState *algorithm_state,
                                  TaskExecutionSpec &execution_spec) {
+  std::cout<<"handle_actor_task_scheduled"<<std::endl;
   TaskSpec *spec = execution_spec.Spec();
   /* This callback handles tasks that were assigned to this local scheduler by
    * the global scheduler or by other workers, so we can safely assert that
@@ -1550,6 +1567,7 @@ void handle_actor_task_scheduled(LocalSchedulerState *state,
 void handle_worker_available(LocalSchedulerState *state,
                              SchedulingAlgorithmState *algorithm_state,
                              LocalSchedulerClient *worker) {
+  std::cout<<"handle_worker_available"<<std::endl;
   RAY_CHECK(worker->task_in_progress == NULL);
   /* Check that the worker isn't in the pool of available workers. */
   RAY_CHECK(!worker_in_vector(algorithm_state->available_workers, worker));
@@ -1574,6 +1592,7 @@ void handle_worker_available(LocalSchedulerState *state,
 void handle_worker_removed(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            LocalSchedulerClient *worker) {
+  std::cout<<"handle_worker_removed"<<std::endl;
   /* Make sure this is not an actor. */
   RAY_CHECK(worker->actor_id.is_nil());
 
@@ -1612,6 +1631,7 @@ void handle_actor_worker_disconnect(LocalSchedulerState *state,
                                     SchedulingAlgorithmState *algorithm_state,
                                     LocalSchedulerClient *worker,
                                     bool cleanup) {
+  std::cout<<"handle_actor_worker_disconnect"<<std::endl;
   /* Fail all in progress or queued tasks of the actor. */
   if (!cleanup) {
     if (state->db != NULL) {
@@ -1645,6 +1665,7 @@ void handle_actor_worker_disconnect(LocalSchedulerState *state,
 void handle_actor_worker_available(LocalSchedulerState *state,
                                    SchedulingAlgorithmState *algorithm_state,
                                    LocalSchedulerClient *worker) {
+  std::cout<<"handle_actor_worker_available"<<std::endl;
   ActorID actor_id = worker->actor_id;
   RAY_CHECK(!actor_id.is_nil());
   /* Get the actor info for this worker. */
@@ -1670,6 +1691,7 @@ void handle_actor_worker_available(LocalSchedulerState *state,
 void handle_worker_blocked(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            LocalSchedulerClient *worker) {
+  std::cout<<"handle_worker_blocked"<<std::endl;
   /* Find the worker in the list of executing workers. */
   RAY_CHECK(
       remove_worker_from_vector(algorithm_state->executing_workers, worker));
@@ -1687,6 +1709,7 @@ void handle_worker_blocked(LocalSchedulerState *state,
 void handle_actor_worker_blocked(LocalSchedulerState *state,
                                  SchedulingAlgorithmState *algorithm_state,
                                  LocalSchedulerClient *worker) {
+  std::cout<<"handle_actor_worker_blocked"<<std::endl;
   /* The actor case doesn't use equivalents of the blocked_workers and
    * executing_workers lists. Are these necessary? */
   /* Try to dispatch tasks, since we may have freed up some resources. */
@@ -1696,6 +1719,7 @@ void handle_actor_worker_blocked(LocalSchedulerState *state,
 void handle_worker_unblocked(LocalSchedulerState *state,
                              SchedulingAlgorithmState *algorithm_state,
                              LocalSchedulerClient *worker) {
+  std::cout<<"handle_worker_unblocked"<<std::endl;
   /* Find the worker in the list of blocked workers. */
   RAY_CHECK(
       remove_worker_from_vector(algorithm_state->blocked_workers, worker));
@@ -1714,6 +1738,7 @@ void handle_actor_worker_unblocked(LocalSchedulerState *state,
 void handle_object_available(LocalSchedulerState *state,
                              SchedulingAlgorithmState *algorithm_state,
                              ObjectID object_id) {
+  std::cout<<"handle_object_available"<<std::endl;
   auto object_entry_it = algorithm_state->remote_objects.find(object_id);
 
   ObjectEntry entry;
@@ -1754,6 +1779,7 @@ void handle_object_available(LocalSchedulerState *state,
 
 void handle_object_removed(LocalSchedulerState *state,
                            ObjectID removed_object_id) {
+  std::cout<<"handle_object_removed"<<std::endl;
   /* Remove the object from the set of locally available objects. */
   SchedulingAlgorithmState *algorithm_state = state->algorithm_state;
 
@@ -1833,6 +1859,7 @@ void handle_object_removed(LocalSchedulerState *state,
 void handle_driver_removed(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            WorkerID driver_id) {
+  std::cout<<"handle_driver_removed"<<std::endl;
   /* Loop over fetch requests. This must be done before we clean up the waiting
    * task queue and the dispatch task queue because this map contains iterators
    * for those lists, which will be invalidated when we clean up those lists.*/
