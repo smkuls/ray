@@ -396,6 +396,16 @@ void TaskSpec_free(TaskSpec *spec) {
   free(spec);
 }
 
+int combineTwoInts(int a, int b){
+  return (a<<16) + b;
+}
+int getFirstInt(int c){
+  return (c>>16);
+}
+int getSecondInt(int c){
+  return ((1 << 16) & c);
+}
+
 TaskExecutionSpec::TaskExecutionSpec(
     const std::vector<ObjectID> &execution_dependencies,
     const TaskSpec *spec,
@@ -405,8 +415,7 @@ TaskExecutionSpec::TaskExecutionSpec(
     : execution_dependencies_(execution_dependencies),
       task_spec_size_(task_spec_size),
       last_timestamp_(0),
-      spillback_count_(spillback_count),
-      last_load_(last_load) {
+      spillback_count_(combineTwoInts(last_load, spillback_count)) {
   TaskSpec *spec_copy = new TaskSpec[task_spec_size_];
   memcpy(spec_copy, spec, task_spec_size);
   spec_ = std::unique_ptr<TaskSpec[]>(spec_copy);
@@ -422,8 +431,7 @@ TaskExecutionSpec::TaskExecutionSpec(TaskExecutionSpec *other)
     : execution_dependencies_(other->execution_dependencies_),
       task_spec_size_(other->task_spec_size_),
       last_timestamp_(other->last_timestamp_),
-      spillback_count_(other->spillback_count_),
-      last_load_(other->last_load_) {
+      spillback_count_(other->spillback_count_){
   TaskSpec *spec_copy = new TaskSpec[task_spec_size_];
   memcpy(spec_copy, other->spec_.get(), task_spec_size_);
   spec_ = std::unique_ptr<TaskSpec[]>(spec_copy);
@@ -443,15 +451,16 @@ int64_t TaskExecutionSpec::SpecSize() const {
 }
 
 int TaskExecutionSpec::SpillbackCount() const {
-  return spillback_count_;
+  return getSecondInt(spillback_count_);
 }
 
 int TaskExecutionSpec::LastLoad() const {
-  return last_load_;
+  return getFirstInt(spillback_count_);
 }
 
 void TaskExecutionSpec::UpdateLastLoad(int load) {
-  last_load_ = load;
+  int ss= getSecondInt(spillback_count_);
+  spillback_count_ = combineTwoInts(load, ss);
 }
 
 

@@ -125,8 +125,6 @@ class TaskExecutionSpec {
   int spillback_count_;
   /** The task specification for this task. */
   std::unique_ptr<TaskSpec[]> spec_;
-  /** Load of last probed node **/
-  int last_load_;
 };
 
 class TaskBuilder;
