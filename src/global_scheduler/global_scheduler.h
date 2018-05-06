@@ -99,4 +99,8 @@ void assign_task_to_local_scheduler(GlobalSchedulerState *state,
                                     Task *task,
                                     DBClientID local_scheduler_id);
 
+
+
+bool constraints_satisfied_hard(const LocalScheduler *scheduler, const TaskSpec *spec);
+
 #endif /* GLOBAL_SCHEDULER_H */

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "global_scheduler/global_scheduler.h"
 
 /** This struct is used to maintain a mapping from actor IDs to the ID of the
  *  local scheduler that is responsible for the actor. */
@@ -82,6 +83,16 @@ struct LocalSchedulerState {
   /** The time (in milliseconds since the Unix epoch) when the most recent
    *  heartbeat was sent. */
   int64_t previous_heartbeat_time;
+  /** A hash table mapping local scheduler ID to the local schedulers that are
+   *  connected to Redis. */
+  std::unordered_map<DBClientID, LocalScheduler, UniqueIDHasher>
+      local_schedulers;
+  /** The plasma_manager ip:port -> local_scheduler_db_client_id association. */
+  std::unordered_map<std::string, DBClientID> plasma_local_scheduler_map;
+  /** The local_scheduler_db_client_id -> plasma_manager ip:port association. */
+  std::unordered_map<DBClientID, std::string, UniqueIDHasher>
+      local_scheduler_plasma_map;
+
 };
 
 /** Contains all information associated with a local scheduler client. */

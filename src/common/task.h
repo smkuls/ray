@@ -13,9 +13,6 @@
 
 using namespace ray;
 
-const int MAXSPILLBACKCOUNT = 2;
-
-
 typedef char TaskSpec;
 
 class TaskExecutionSpec {

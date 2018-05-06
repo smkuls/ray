@@ -473,6 +473,51 @@ void start_server(const char *node_ip_address,
   event_loop_run(loop);
 }
 
+
+
+/**
+ * Checks if the given local scheduler satisfies the task's hard constraints.
+ *
+ * @param scheduler Local scheduler.
+ * @param spec Task specification.
+ * @return True if all tasks's resource constraints are satisfied. False
+ *         otherwise.
+ */
+bool constraints_satisfied_hard(const LocalScheduler *scheduler,
+                                const TaskSpec *spec) {
+  if (scheduler->info.static_resources.count("CPU") == 1 &&
+      scheduler->info.static_resources.at("CPU") == 0) {
+    // Don't give tasks to local schedulers that have 0 CPUs. This can be an
+    // issue for actor creation tasks that require 0 CPUs (but the subsequent
+    // actor methods require some CPUs).
+    return false;
+  }
+
+  for (auto const &resource_pair : TaskSpec_get_required_resources(spec)) {
+    std::string resource_name = resource_pair.first;
+    double resource_quantity = resource_pair.second;
+
+    // Continue on if the task doesn't actually require this resource.
+    if (resource_quantity == 0) {
+      continue;
+    }
+
+    // Check if the local scheduler has this resource.
+    if (scheduler->info.static_resources.count(resource_name) == 0) {
+      return false;
+    }
+
+    // Check if the local scheduler has enough of the resource.
+    if (scheduler->info.static_resources.at(resource_name) <
+        resource_quantity) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
 int main(int argc, char *argv[]) {
   signal(SIGTERM, signal_handler);
   /* IP address and port of the primary redis instance. */

@@ -1380,6 +1380,80 @@ int heartbeat_handler(event_loop *loop, timer_id id, void *context) {
   return RayConfig::instance().heartbeat_timeout_milliseconds();
 }
 
+
+void add_local_scheduler(LocalSchedulerState *state,
+                         DBClientID db_client_id,
+                         const char *manager_address) {
+
+  std::cout<<"Add local scheduler called: "<<manager_address<<std::endl;
+  /* Add plasma_manager ip:port -> local_scheduler_db_client_id association to
+   * state. */
+  state->plasma_local_scheduler_map[std::string(manager_address)] =
+      db_client_id;
+
+  /* Add local_scheduler_db_client_id -> plasma_manager ip:port association to
+   * state. */
+  state->local_scheduler_plasma_map[db_client_id] =
+      std::string(manager_address);
+
+  /* Add new local scheduler to the state. */
+  LocalScheduler &local_scheduler = state->local_schedulers[db_client_id];
+  local_scheduler.id = db_client_id;
+  local_scheduler.num_heartbeats_missed = 0;
+  local_scheduler.num_tasks_sent = 0;
+  local_scheduler.num_recent_tasks_sent = 0;
+  local_scheduler.info.task_queue_length = 0;
+  local_scheduler.info.available_workers = 0;
+}
+
+std::unordered_map<DBClientID, LocalScheduler, UniqueIDHasher>::iterator
+remove_local_scheduler(
+    LocalSchedulerState *state,
+    std::unordered_map<DBClientID, LocalScheduler, UniqueIDHasher>::iterator
+        it) {
+  RAY_CHECK(it != state->local_schedulers.end());
+  DBClientID local_scheduler_id = it->first;
+  it = state->local_schedulers.erase(it);
+
+  /* Remove the local scheduler from the mappings. This code only makes sense if
+   * there is a one-to-one mapping between local schedulers and plasma managers.
+   */
+  std::string manager_address =
+      state->local_scheduler_plasma_map[local_scheduler_id];
+  state->local_scheduler_plasma_map.erase(local_scheduler_id);
+  state->plasma_local_scheduler_map.erase(manager_address);
+  return it;
+}
+
+void process_new_db_client(DBClient *db_client, void *user_context) {
+  LocalSchedulerState *state = (LocalSchedulerState *) user_context;
+  RAY_LOG(DEBUG) << "db client table callback for db client = "
+                 << db_client->id;
+  if (strncmp(db_client->client_type.c_str(), "local_scheduler",
+              strlen("local_scheduler")) == 0) {
+    bool local_scheduler_present =
+        (state->local_schedulers.find(db_client->id) !=
+         state->local_schedulers.end());
+    if (db_client->is_alive) {
+      /* This is a notification for an insert. We may receive duplicate
+       * notifications since we read the entire table before processing
+       * notifications. Filter out local schedulers that we already added. */
+      if (!local_scheduler_present) {
+        add_local_scheduler(state, db_client->id,
+                            db_client->manager_address.c_str());
+      }
+    } else {
+      if (local_scheduler_present) {
+        remove_local_scheduler(state,
+                               state->local_schedulers.find(db_client->id));
+      }
+    }
+  }
+}
+
+
+
+
 void start_server(
     const char *node_ip_address,
     const char *socket_name,
@@ -1408,6 +1482,14 @@ void start_server(
   /* Register a callback for registering new clients. */
   event_loop_add_file(loop, fd, EVENT_LOOP_READ, new_client_connection,
                       g_state);
+
+  /* TODO(rkn): subscribe to notifications from the object table. */
+  /* Subscribe to notifications about new local schedulers. TODO(rkn): this
+   * needs to also get all of the clients that registered with the database
+   * before this call to subscribe. */
+  db_client_table_subscribe(g_state->db, process_new_db_client,
+                            (void *) g_state, NULL, NULL, NULL);
+
   /* Subscribe to receive notifications about tasks that are assigned to this
    * local scheduler by the global scheduler or by other local schedulers.
    * TODO(rkn): we also need to get any tasks that were assigned to this local

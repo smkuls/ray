@@ -12,8 +12,50 @@
 #include "state/object_table.h"
 #include "local_scheduler_shared.h"
 #include "local_scheduler.h"
+#include "global_scheduler/global_scheduler.h"
 #include "common/task.h"
 
+
+/**
+ * Checks if the given local scheduler satisfies the task's hard constraints.
+ *
+ * @param scheduler Local scheduler.
+ * @param spec Task specification.
+ * @return True if all tasks's resource constraints are satisfied. False
+ *         otherwise.
+ */
+bool constraints_satisfied_hard_ls(const LocalScheduler *scheduler,
+                                const TaskSpec *spec) {
+  if (scheduler->info.static_resources.count("CPU") == 1 &&
+      scheduler->info.static_resources.at("CPU") == 0) {
+    // Don't give tasks to local schedulers that have 0 CPUs. This can be an
+    // issue for actor creation tasks that require 0 CPUs (but the subsequent
+    // actor methods require some CPUs).
+    return false;
+  }
+
+  for (auto const &resource_pair : TaskSpec_get_required_resources(spec)) {
+    std::string resource_name = resource_pair.first;
+    double resource_quantity = resource_pair.second;
+
+    // Continue on if the task doesn't actually require this resource.
+    if (resource_quantity == 0) {
+      continue;
+    }
+
+    // Check if the local scheduler has this resource.
+    if (scheduler->info.static_resources.count(resource_name) == 0) {
+      return false;
+    }
+
+    // Check if the local scheduler has enough of the resource.
+    if (scheduler->info.static_resources.at(resource_name) <
+        resource_quantity) {
+      return false;
+    }
+  }
+  return true;
+}
 /* Declared for convenience. */
 void remove_actor(SchedulingAlgorithmState *algorithm_state, ActorID actor_id);
 
@@ -878,14 +920,9 @@ void spillback_tasks_handler(LocalSchedulerState *state) {
                    ACTOR_NOT_CREATED_ERROR_INDEX, error_message.str());
       }
     }
-    if(true || it->SpillbackCount() <= MAXSPILLBACKCOUNT){
-    	give_task_to_global_scheduler(state, algorithm_state, *it);
-    	// Dequeue the task.
-    	it = algorithm_state->dispatch_task_queue->erase(it);
-     }
-     else{
-	it++;
-     }
+    give_task_to_global_scheduler(state, algorithm_state, *it);
+    // Dequeue the task.
+    it = algorithm_state->dispatch_task_queue->erase(it);
   }
 }
 
@@ -1313,6 +1350,46 @@ void handle_task_submitted(LocalSchedulerState *state,
   /* Try to dispatch tasks, since we may have added one to the queue. */
   dispatch_tasks(state, algorithm_state);
 }
+
+bool send_task_to_random_local_worker(LocalSchedulerState *state,
+                           SchedulingAlgorithmState *algorithm_state,
+                           TaskExecutionSpec &execution_spec) {
+
+  TaskSpec *task_spec = execution_spec.Spec();
+
+  std::vector<DBClientID> feasible_nodes;
+  for (const auto &it : state->local_schedulers) {
+    // Local scheduler map iterator yields <DBClientID, LocalScheduler> pairs.
+    const LocalScheduler &local_scheduler = it.second;
+    if (!constraints_satisfied_hard_ls(&local_scheduler, task_spec)) {
+      continue;
+    }
+    // Add this local scheduler as a candidate for random selection.
+    feasible_nodes.push_back(it.first);
+  }
+  if (feasible_nodes.size() == 0) {
+    RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
+                   <<  "\n";
+    return false;
+  }
+  DBClientID local_scheduler_id = feasible_nodes[rand() % feasible_nodes.size()];
+
+  if (local_scheduler_id == get_db_client_id(state->db)) {
+    //!TODO this will have to be changed, it should be random
+    queue_task_locally(state, algorithm_state, execution_spec, false);
+    /* Try to dispatch tasks, since we may have added one to the queue. */
+    dispatch_tasks(state, algorithm_state);
+  } else {
+    /* This local scheduler is not responsible for the task, so find the local
+     * scheduler that is responsible for this actor and assign the task directly
+     * to that local scheduler. */
+    give_task_to_local_scheduler(
+        state, algorithm_state, execution_spec,
+        local_scheduler_id);
+  }
+  return true;
+}
+
 
 void handle_actor_task_submitted(LocalSchedulerState *state,
                                  SchedulingAlgorithmState *algorithm_state,
@@ -1891,3 +1968,4 @@ void set_actor_frontier(
     }
   }
 }
+

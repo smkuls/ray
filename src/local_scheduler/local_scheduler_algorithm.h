@@ -4,6 +4,7 @@
 #include "local_scheduler_shared.h"
 #include "common/task.h"
 #include "state/local_scheduler_table.h"
+#include "global_scheduler/global_scheduler.h"
 
 /* ==== The scheduling algorithm ====
  *
