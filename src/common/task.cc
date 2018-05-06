@@ -410,12 +410,11 @@ TaskExecutionSpec::TaskExecutionSpec(
     const std::vector<ObjectID> &execution_dependencies,
     const TaskSpec *spec,
     int64_t task_spec_size,
-    int spillback_count,
-    int last_load)
+    int spillback_count)
     : execution_dependencies_(execution_dependencies),
       task_spec_size_(task_spec_size),
       last_timestamp_(0),
-      spillback_count_(combineTwoInts(last_load, spillback_count)) {
+      spillback_count_(spillback_count) {
   TaskSpec *spec_copy = new TaskSpec[task_spec_size_];
   memcpy(spec_copy, spec, task_spec_size);
   spec_ = std::unique_ptr<TaskSpec[]>(spec_copy);
@@ -425,7 +424,7 @@ TaskExecutionSpec::TaskExecutionSpec(
     const std::vector<ObjectID> &execution_dependencies,
     const TaskSpec *spec,
     int64_t task_spec_size)
-    : TaskExecutionSpec(execution_dependencies, spec, task_spec_size, 0, 4096) {}
+    : TaskExecutionSpec(execution_dependencies, spec, task_spec_size, combineTwoInts(4096, 0)) {}
 
 TaskExecutionSpec::TaskExecutionSpec(TaskExecutionSpec *other)
     : execution_dependencies_(other->execution_dependencies_),

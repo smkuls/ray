@@ -1133,15 +1133,14 @@ void redis_task_table_subscribe_callback(redisAsyncContext *c,
     TaskSpec *spec = (TaskSpec *) message->task_spec()->data();
     int64_t task_spec_size = message->task_spec()->size();
     /* Extract the spillback information. */
-    int spillback_count = getSecondInt_redis(message->spillback_count());
-    int last_load = getFirstInt_redis(message->spillback_count());
+    int spillback_count = message->spillback_count();
     /* Create a task. */
     /* Allocate the task execution spec on the stack and use it to construct
      * the task.
      */
     TaskExecutionSpec execution_spec(
         from_flatbuf(*execution_dependencies->execution_dependencies()), spec,
-        task_spec_size, spillback_count,last_load);
+        task_spec_size, spillback_count);
     Task *task = Task_alloc(execution_spec, state, local_scheduler_id);
 
     /* Call the subscribe callback if there is one. */
