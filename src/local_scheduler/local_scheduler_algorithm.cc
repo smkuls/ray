@@ -26,6 +26,9 @@
  */
 bool constraints_satisfied_hard_ls(const LocalScheduler *scheduler,
                                 const TaskSpec *spec) {
+  std::cout<<"(spec == null): "<<(spec==NULL)<<" : "<<std::endl;
+  std::cout<<"constraints_satisfieds_ls: "<<scheduler->info.static_resources.count("CPU")<<": "<<std::endl;
+
   if (scheduler->info.static_resources.count("CPU") == 1 &&
       scheduler->info.static_resources.at("CPU") == 0) {
     // Don't give tasks to local schedulers that have 0 CPUs. This can be an
@@ -38,11 +41,15 @@ bool constraints_satisfied_hard_ls(const LocalScheduler *scheduler,
     std::string resource_name = resource_pair.first;
     double resource_quantity = resource_pair.second;
 
+     std::cout<<"resource_quantity: "<<resource_quantity<<std::endl;
+
     // Continue on if the task doesn't actually require this resource.
     if (resource_quantity == 0) {
       continue;
     }
 
+    std::cout<<"(scheduler->info.static_resources.at(resource_name): "<<scheduler->info.static_resources.count(resource_name)<<std::endl;
+    
     // Check if the local scheduler has this resource.
     if (scheduler->info.static_resources.count(resource_name) == 0) {
       return false;
@@ -1327,20 +1334,22 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            TaskExecutionSpec &execution_spec) {
 
-  std::cout<<"sending task to random local worker"<<std::endl;
  
-  TaskSpec *task_spec = execution_spec.Spec();
+  //TaskSpec *task_spec = execution_spec.Spec();
 
   std::vector<DBClientID> feasible_nodes;
   for (const auto &it : state->local_schedulers) {
     // Local scheduler map iterator yields <DBClientID, LocalScheduler> pairs.
-    const LocalScheduler &local_scheduler = it.second;
-    if (!constraints_satisfied_hard_ls(&local_scheduler, task_spec)) {
-      continue;
-    }
+    //const LocalScheduler &local_scheduler = it.second;
+    //if (!constraints_satisfied_hard_ls(&local_scheduler, task_spec)) {
+    //  continue;
+    //}
     // Add this local scheduler as a candidate for random selection.
     feasible_nodes.push_back(it.first);
   }
+
+  std::cout<<"Feasible_nodes.size/allnodes.size: "<<feasible_nodes.size()<<"/"<<state->local_schedulers.size()<<std::endl;
+ 
   if (feasible_nodes.size() == 0) {
     RAY_LOG(ERROR) << "Infeasible task. No nodes satisfy hard constraints for "
                    <<  "\n";
@@ -1354,6 +1363,8 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
 
   int load = execution_spec.LastLoad();
   execution_spec.UpdateLastLoad(currload);
+
+  std::cout<<"sending task to random local worker, load: "<<load<<", currload: "<<currload<<std::endl;
 
   if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
     //!TODO this will have to be changed, it should be random
