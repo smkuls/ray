@@ -26,7 +26,7 @@ class TaskExecutionSpec {
                     const TaskSpec *spec,
                     int64_t task_spec_size,
                     int spillback_count,
-  		    int last_load=INT_MAX);
+  		    int last_load);
   TaskExecutionSpec(TaskExecutionSpec *execution_spec);
 
   /// Get the task's execution dependencies.

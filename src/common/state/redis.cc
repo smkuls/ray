@@ -1089,6 +1089,17 @@ void redis_task_table_test_and_update(TableCallbackData *callback_data) {
   }
 }
 
+int combineTwoInts_redis(int a, int b){
+  return (a<<16) + b;
+}
+int getFirstInt_redis(int c){
+  return (c>>16);
+}
+int getSecondInt_redis(int c){
+  return ((1 << 16) & c);
+}
+
+
 void redis_task_table_subscribe_callback(redisAsyncContext *c,
                                          void *r,
                                          void *privdata) {
@@ -1122,14 +1133,15 @@ void redis_task_table_subscribe_callback(redisAsyncContext *c,
     TaskSpec *spec = (TaskSpec *) message->task_spec()->data();
     int64_t task_spec_size = message->task_spec()->size();
     /* Extract the spillback information. */
-    int spillback_count = message->spillback_count();
+    int spillback_count = getSecondInt_redis(message->spillback_count());
+    int last_load = getFirstInt_redis(message->spillback_count());
     /* Create a task. */
     /* Allocate the task execution spec on the stack and use it to construct
      * the task.
      */
     TaskExecutionSpec execution_spec(
         from_flatbuf(*execution_dependencies->execution_dependencies()), spec,
-        task_spec_size, spillback_count);
+        task_spec_size, spillback_count,last_load);
     Task *task = Task_alloc(execution_spec, state, local_scheduler_id);
 
     /* Call the subscribe callback if there is one. */
