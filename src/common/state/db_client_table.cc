@@ -60,13 +60,16 @@ const std::vector<std::string> db_client_table_get_ip_addresses(
 
 void db_client_table_update_cache_callback(DBClient *db_client,
                                            void *user_context) {
-  DBHandle *db_handle = (DBHandle *) user_context;
+  LocalSchedulerState *g_state = (LocalSchedulerState *) user_context;
+  DBHandle *db_handle = g_state->db;
   redis_cache_set_db_client(db_handle, *db_client);
+  process_new_db_client(db_client, user_context);
 }
 
-void db_client_table_cache_init(DBHandle *db_handle) {
+void db_client_table_cache_init(LocalSchedulerState *g_state) {
+  DBHandle *db_handle = g_state->db;
   db_client_table_subscribe(db_handle, db_client_table_update_cache_callback,
-                            db_handle, NULL, NULL, NULL);
+                            g_state, NULL, NULL, NULL);
 }
 
 DBClient db_client_table_cache_get(DBHandle *db_handle, DBClientID client_id) {

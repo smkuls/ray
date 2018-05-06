@@ -1480,18 +1480,18 @@ void start_server(
       socket_name, plasma_store_socket_name, plasma_manager_socket_name,
       plasma_manager_address, global_scheduler_exists, static_resource_conf,
       start_worker_command, num_workers);
-  /* Register a callback for registering new clients. */
-  event_loop_add_file(loop, fd, EVENT_LOOP_READ, new_client_connection,
-                      g_state);
 
   /* TODO(rkn): subscribe to notifications from the object table. */
   /* Subscribe to notifications about new local schedulers. TODO(rkn): this
    * needs to also get all of the clients that registered with the database
    * before this call to subscribe. */
-  std::cout<<"Local scheduler: subscribing to db client table"<<std::endl;
-  db_client_table_subscribe(g_state->db, process_new_db_client,
-                            (void *) g_state, NULL, NULL, NULL);
+  std::cout<<"Local scheduler: subscribing to db client table "<<(g_state == NULL) << std::endl;
+  //db_client_table_subscribe(g_state->db, process_new_db_client,
+  //                          (void *) g_state, NULL, NULL, NULL);
 
+  /* Register a callback for registering new clients. */
+  event_loop_add_file(loop, fd, EVENT_LOOP_READ, new_client_connection,
+                      g_state);
   /* Subscribe to receive notifications about tasks that are assigned to this
    * local scheduler by the global scheduler or by other local schedulers.
    * TODO(rkn): we also need to get any tasks that were assigned to this local
@@ -1521,7 +1521,7 @@ void start_server(
   }
   /* Listen for new and deleted db clients. */
   if (g_state->db != NULL) {
-    db_client_table_cache_init(g_state->db);
+    db_client_table_cache_init(g_state);
   }
   /* Create a timer for fetching queued tasks' missing object dependencies. */
   event_loop_add_timer(
