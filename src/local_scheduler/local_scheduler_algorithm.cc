@@ -737,7 +737,7 @@ bool object_locally_available(SchedulingAlgorithmState *algorithm_state,
 
 /* TODO(swang): This method is not covered by any valgrind tests. */
 int fetch_object_timeout_handler(event_loop *loop, timer_id id, void *context) {
-  std::cout<<"fetch_object_timeout_handler"<<std::endl;
+  //std::cout<<"fetch_object_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -799,7 +799,7 @@ int fetch_object_timeout_handler(event_loop *loop, timer_id id, void *context) {
 int reconstruct_object_timeout_handler(event_loop *loop,
                                        timer_id id,
                                        void *context) {
-  std::cout<<"reconstruct_object_timeout_handler"<<std::endl;
+  //std::cout<<"reconstruct_object_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -850,7 +850,7 @@ int reconstruct_object_timeout_handler(event_loop *loop,
 int rerun_actor_creation_tasks_timeout_handler(event_loop *loop,
                                                timer_id id,
                                                void *context) {
-  std::cout<<"rerun_actor_creation_tasks_timeout_handler"<<std::endl;
+  //std::cout<<"rerun_actor_creation_tasks_timeout_handler"<<std::endl;
   int64_t start_time = current_time_ms();
 
   LocalSchedulerState *state = (LocalSchedulerState *) context;
@@ -899,7 +899,7 @@ bool resources_available(LocalSchedulerState *state) {
 }
 
 void spillback_tasks_handler(LocalSchedulerState *state) {
-  std::cout<<"spillback_tasks_handler"<<std::endl;
+  //std::cout<<"spillback_tasks_handler"<<std::endl;
   SchedulingAlgorithmState *algorithm_state = state->algorithm_state;
 
   int64_t num_to_spillback = std::min(
