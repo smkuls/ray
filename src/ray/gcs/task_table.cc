@@ -27,6 +27,7 @@ std::shared_ptr<TaskTableDataT> MakeTaskTableData(const TaskExecutionSpec &execu
   data->execution_dependencies =
       std::string((const char *)fbb.GetBufferPointer(), fbb.GetSize());
   data->spillback_count = execution_spec.SpillbackCount();
+  data->last_load = execution_spec.LastLoad();
 
   return data;
 }

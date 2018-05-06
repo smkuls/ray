@@ -71,6 +71,8 @@ table TaskTableData {
   execution_dependencies: string;
   // The number of times the task was spilled back by local schedulers.
   spillback_count: long;
+  // last load
+  last_load: long;
   // A string of bytes representing the task specification.
   task_info: string;
   // TODO(pcm): This is at the moment duplicated in task_info, remove that one

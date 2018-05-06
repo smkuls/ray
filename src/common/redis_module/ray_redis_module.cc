@@ -481,7 +481,7 @@ int TaskTableAdd(RedisModuleCtx *ctx,
         fbb, RedisStringToFlatbuf(fbb, id), message->scheduling_state(),
         fbb.CreateString(message->scheduler_id()),
         fbb.CreateString(message->execution_dependencies()),
-        fbb.CreateString(message->task_info()), message->spillback_count(),
+        fbb.CreateString(message->task_info()), message->spillback_count(), message->last_load(),
         true /* not used */);
     fbb.Finish(msg);
 
@@ -1253,13 +1253,14 @@ int ReplyWithTask(RedisModuleCtx *ctx,
     RedisModuleString *execution_dependencies = NULL;
     RedisModuleString *task_spec = NULL;
     RedisModuleString *spillback_count = NULL;
+    RedisModuleString *last_load = NULL;
     RedisModule_HashGet(
         key, REDISMODULE_HASH_CFIELDS, "state", &state, "local_scheduler_id",
         &local_scheduler_id, "execution_dependencies", &execution_dependencies,
-        "TaskSpec", &task_spec, "spillback_count", &spillback_count, NULL);
+        "TaskSpec", &task_spec, "spillback_count", &spillback_count, "last_load", &last_load, NULL);
     if (state == NULL || local_scheduler_id == NULL ||
         execution_dependencies == NULL || task_spec == NULL ||
-        spillback_count == NULL) {
+        spillback_count == NULL || last_load == NULL) {
       /* We must have either all fields or no fields. */
       RedisModule_CloseKey(key);
       return RedisModule_ReplyWithError(
@@ -1268,18 +1269,23 @@ int ReplyWithTask(RedisModuleCtx *ctx,
 
     long long state_integer;
     long long spillback_count_val;
+    long long last_load_val;
     if ((RedisModule_StringToLongLong(state, &state_integer) !=
          REDISMODULE_OK) ||
         (state_integer < 0) ||
         (RedisModule_StringToLongLong(spillback_count, &spillback_count_val) !=
          REDISMODULE_OK) ||
-        (spillback_count_val < 0)) {
+        (spillback_count_val < 0) || 
+	(RedisModule_StringToLongLong(last_load, &last_load_val) !=
+         REDISMODULE_OK) || 
+        (last_load_val < 0)) {
       RedisModule_CloseKey(key);
       RedisModule_FreeString(ctx, state);
       RedisModule_FreeString(ctx, local_scheduler_id);
       RedisModule_FreeString(ctx, execution_dependencies);
       RedisModule_FreeString(ctx, task_spec);
       RedisModule_FreeString(ctx, spillback_count);
+      RedisModule_FreeString(ctx, last_load);
       return RedisModule_ReplyWithError(
           ctx, "Found invalid scheduling state or spillback count.");
     }
@@ -1289,7 +1295,7 @@ int ReplyWithTask(RedisModuleCtx *ctx,
         fbb, RedisStringToFlatbuf(fbb, task_id), state_integer,
         RedisStringToFlatbuf(fbb, local_scheduler_id),
         RedisStringToFlatbuf(fbb, execution_dependencies),
-        RedisStringToFlatbuf(fbb, task_spec), spillback_count_val, updated);
+        RedisStringToFlatbuf(fbb, task_spec), spillback_count_val, last_load_val, updated);
     fbb.Finish(message);
 
     RedisModuleString *reply = RedisModule_CreateString(
@@ -1301,6 +1307,7 @@ int ReplyWithTask(RedisModuleCtx *ctx,
     RedisModule_FreeString(ctx, execution_dependencies);
     RedisModule_FreeString(ctx, task_spec);
     RedisModule_FreeString(ctx, spillback_count);
+    RedisModule_FreeString(ctx, last_load);
   } else {
     /* If the key does not exist, return nil. */
     RedisModule_ReplyWithNull(ctx);
@@ -1412,6 +1419,7 @@ int TaskTableWrite(RedisModuleCtx *ctx,
                    RedisModuleString *local_scheduler_id,
                    RedisModuleString *execution_dependencies,
                    RedisModuleString *spillback_count,
+                   RedisModuleString *last_load,
                    RedisModuleString *task_spec) {
   /* Extract the scheduling state. */
   long long state_value;
@@ -1424,6 +1432,12 @@ int TaskTableWrite(RedisModuleCtx *ctx,
       REDISMODULE_OK) {
     return RedisModule_ReplyWithError(ctx, "spillback count must be integer");
   }
+
+  long long last_load_value;
+  if (RedisModule_StringToLongLong(last_load, &last_load_value) !=
+      REDISMODULE_OK) {
+    return RedisModule_ReplyWithError(ctx, "last load must be integer");
+  }
   /* Add the task to the task table. If no spec was provided, get the existing
    * spec out of the task table so we can publish it. */
   RedisModuleString *existing_task_spec = NULL;
@@ -1433,7 +1447,7 @@ int TaskTableWrite(RedisModuleCtx *ctx,
     RedisModule_HashSet(key, REDISMODULE_HASH_CFIELDS, "state", state,
                         "local_scheduler_id", local_scheduler_id,
                         "execution_dependencies", execution_dependencies,
-                        "spillback_count", spillback_count, NULL);
+                        "spillback_count", spillback_count, "last_load", last_load, NULL);
     RedisModule_HashGet(key, REDISMODULE_HASH_CFIELDS, "TaskSpec",
                         &existing_task_spec, NULL);
     if (existing_task_spec == NULL) {
@@ -1445,7 +1459,7 @@ int TaskTableWrite(RedisModuleCtx *ctx,
     RedisModule_HashSet(
         key, REDISMODULE_HASH_CFIELDS, "state", state, "local_scheduler_id",
         local_scheduler_id, "execution_dependencies", execution_dependencies,
-        "TaskSpec", task_spec, "spillback_count", spillback_count, NULL);
+        "TaskSpec", task_spec, "spillback_count", spillback_count, "last_load", last_load, NULL);
   }
   RedisModule_CloseKey(key);
 
@@ -1472,7 +1486,7 @@ int TaskTableWrite(RedisModuleCtx *ctx,
         fbb, RedisStringToFlatbuf(fbb, task_id), state_value,
         RedisStringToFlatbuf(fbb, local_scheduler_id),
         RedisStringToFlatbuf(fbb, execution_dependencies),
-        RedisStringToFlatbuf(fbb, task_spec_to_use), spillback_count_value,
+        RedisStringToFlatbuf(fbb, task_spec_to_use), spillback_count_value, last_load_value,
         true);  // The updated field is not used.
     fbb.Finish(message);
 
@@ -1539,7 +1553,7 @@ int TaskTableAddTask_RedisCommand(RedisModuleCtx *ctx,
   }
 
   return TaskTableWrite(ctx, argv[1], argv[2], argv[3], argv[4], argv[5],
-                        argv[6]);
+                        argv[6], argv[7]);
 }
 
 /**
@@ -1567,7 +1581,7 @@ int TaskTableUpdate_RedisCommand(RedisModuleCtx *ctx,
     return RedisModule_WrongArity(ctx);
   }
 
-  return TaskTableWrite(ctx, argv[1], argv[2], argv[3], argv[4], argv[5], NULL);
+  return TaskTableWrite(ctx, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], NULL);
 }
 
 /**
