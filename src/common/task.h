@@ -6,12 +6,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "common.h"
-
+#include "limits.h"
 #include <string>
 
 #include "format/common_generated.h"
 
 using namespace ray;
+
+const int MAX_SPILLBACKS = 2;
 
 typedef char TaskSpec;
 
@@ -23,7 +25,8 @@ class TaskExecutionSpec {
   TaskExecutionSpec(const std::vector<ObjectID> &execution_dependencies,
                     const TaskSpec *spec,
                     int64_t task_spec_size,
-                    int spillback_count);
+                    int spillback_count,
+  		    int last_load=INT_MAX);
   TaskExecutionSpec(TaskExecutionSpec *execution_spec);
 
   /// Get the task's execution dependencies.
@@ -106,6 +109,10 @@ class TaskExecutionSpec {
   ///         immutable (an argument of the task).
   bool IsStaticDependency(int64_t dependency_index) const;
 
+  void UpdateLastLoad(int load);
+
+  int LastLoad() const;
+
  private:
   /** A list of object IDs representing this task's dependencies at execution
    *  time. */
@@ -118,6 +125,8 @@ class TaskExecutionSpec {
   int spillback_count_;
   /** The task specification for this task. */
   std::unique_ptr<TaskSpec[]> spec_;
+  /** Load of last probed node **/
+  int last_load_;
 };
 
 class TaskBuilder;

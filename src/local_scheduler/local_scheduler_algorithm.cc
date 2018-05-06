@@ -1321,40 +1321,14 @@ bool resource_constraints_satisfied(LocalSchedulerState *state,
   return true;
 }
 
-void handle_task_submitted(LocalSchedulerState *state,
-                           SchedulingAlgorithmState *algorithm_state,
-                           TaskExecutionSpec &execution_spec) {
-  TaskSpec *spec = execution_spec.Spec();
-  /* TODO(atumanov): if static is satisfied and local objects ready, but dynamic
-   * resource is currently unavailable, then consider queueing task locally and
-   * recheck dynamic next time. */
 
-  // If this task's constraints are satisfied, dependencies are available
-  // locally, and there is an available worker, then enqueue the task in the
-  // dispatch queue and trigger task dispatch. Otherwise, pass the task along to
-  // the global scheduler if there is one.
-  // Note that actor creation tasks automatically go to the global scheduler.
-  // See https://github.com/ray-project/ray/issues/1756 for more discussion.
-  // This is a hack to improve actor load balancing (and to prevent the scenario
-  // where all actors are started locally).
-  if (resource_constraints_satisfied(state, spec) &&
-      (algorithm_state->available_workers.size() > 0) &&
-      can_run(algorithm_state, execution_spec) &&
-      !TaskSpec_is_actor_creation_task(spec)) {
-    queue_dispatch_task(state, algorithm_state, execution_spec, false);
-  } else {
-    /* Give the task to the global scheduler to schedule, if it exists. */
-    give_task_to_global_scheduler(state, algorithm_state, execution_spec);
-  }
-
-  /* Try to dispatch tasks, since we may have added one to the queue. */
-  dispatch_tasks(state, algorithm_state);
-}
 
 bool send_task_to_random_local_worker(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            TaskExecutionSpec &execution_spec) {
 
+  std::cout<<"sending task to random local worker"<<std::endl;
+ 
   TaskSpec *task_spec = execution_spec.Spec();
 
   std::vector<DBClientID> feasible_nodes;
@@ -1374,7 +1348,14 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
   }
   DBClientID local_scheduler_id = feasible_nodes[rand() % feasible_nodes.size()];
 
-  if (local_scheduler_id == get_db_client_id(state->db)) {
+  int64_t waiting_task_queue_length = algorithm_state->waiting_task_queue->size();
+  int64_t dispatch_task_queue_length = algorithm_state->dispatch_task_queue->size();
+  int currload = waiting_task_queue_length + dispatch_task_queue_length;
+
+  int load = execution_spec.LastLoad();
+  execution_spec.UpdateLastLoad(currload);
+
+  if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
     //!TODO this will have to be changed, it should be random
     queue_task_locally(state, algorithm_state, execution_spec, false);
     /* Try to dispatch tasks, since we may have added one to the queue. */
@@ -1383,12 +1364,54 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
     /* This local scheduler is not responsible for the task, so find the local
      * scheduler that is responsible for this actor and assign the task directly
      * to that local scheduler. */
+    execution_spec.IncrementSpillbackCount();
     give_task_to_local_scheduler(
         state, algorithm_state, execution_spec,
         local_scheduler_id);
   }
   return true;
 }
+
+
+
+
+
+void handle_task_submitted(LocalSchedulerState *state,
+                           SchedulingAlgorithmState *algorithm_state,
+                           TaskExecutionSpec &execution_spec) {
+  TaskSpec *spec = execution_spec.Spec();
+  /* TODO(atumanov): if static is satisfied and local objects ready, but dynamic
+   * resource is currently unavailable, then consider queueing task locally and
+   * recheck dynamic next time. */
+
+  // If this task's constraints are satisfied, dependencies are available
+  // locally, and there is an available worker, then enqueue the task in the
+  // dispatch queue and trigger task dispatch. Otherwise, pass the task along to
+  // the global scheduler if there is one.
+  // Note that actor creation tasks automatically go to the global scheduler.
+  // See https://github.com/ray-project/ray/issues/1756 for more discussion.
+  // This is a hack to improve actor load balancing (and to prevent the scenario
+  // where all actors are started locally).
+
+  if (resource_constraints_satisfied(state, spec) &&
+      (algorithm_state->available_workers.size() > 0) &&
+      can_run(algorithm_state, execution_spec) &&
+      !TaskSpec_is_actor_creation_task(spec)) {
+    queue_dispatch_task(state, algorithm_state, execution_spec, false);
+  } else {
+    /* Give the task to the global scheduler to schedule, if it exists. */
+    if(!TaskSpec_is_actor_creation_task(spec)){
+	send_task_to_random_local_worker(state, algorithm_state, execution_spec);
+    }
+    else{
+    	give_task_to_global_scheduler(state, algorithm_state, execution_spec);
+    }
+  }
+  /* Try to dispatch tasks, since we may have added one to the queue. */
+  dispatch_tasks(state, algorithm_state);
+}
+
+
 
 
 void handle_actor_task_submitted(LocalSchedulerState *state,
