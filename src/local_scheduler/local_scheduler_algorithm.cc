@@ -943,7 +943,7 @@ void dispatch_tasks(LocalSchedulerState *state,
   } /* End for each task in the dispatch queue. */
 
   // print task stats for this worker
-  print_worker_info("Local Scheduler Debug", algorithm_state);
+  //print_worker_info("Local Scheduler Debug", algorithm_state);
 }
 
 /**
@@ -1257,7 +1257,7 @@ void give_task_to_global_scheduler(LocalSchedulerState *state,
       .fail_callback = give_task_to_global_scheduler_retry,
   };
   task_table_add_task(state->db, task, &retryInfo, NULL, state);
-  RAY_LOG(INFO) << "Local scheduler is trying to assign task to global scheduler.";
+  //RAY_LOG(DEBUG) << "Local scheduler is trying to assign task to global scheduler.";
 #else
   RAY_CHECK_OK(TaskTableAdd(&state->gcs_client, task));
   Task_free(task);
@@ -1796,7 +1796,7 @@ int num_dispatch_tasks(SchedulingAlgorithmState *algorithm_state) {
 
 void print_worker_info(const char *message,
                        SchedulingAlgorithmState *algorithm_state) {
-  RAY_LOG(INFO) << message << ": " << algorithm_state->available_workers.size()
+  RAY_LOG(DEBUG) << message << ": " << algorithm_state->available_workers.size()
                  << " available, " << algorithm_state->executing_workers.size()
                  << " executing, " << algorithm_state->blocked_workers.size()
                  << " blocked";
