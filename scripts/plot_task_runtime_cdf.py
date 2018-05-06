@@ -39,6 +39,6 @@ ax.legend(loc='right')
 ax.set_title('Task Runtime CDF')
 ax.set_xlabel('Task runtime (milliseconds)')
 ax.set_ylabel('')
-
-plt.show()
+plt.savefig('plots/task_runtime_cdf.png')
+# plt.show()
 

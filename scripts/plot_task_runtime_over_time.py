@@ -7,7 +7,7 @@ worker_utilization_file_name = "task_runtime_output.txt"
 with open(worker_utilization_file_name, "r") as file_handle:
     y = map(float, file_handle.readlines())
 
-N = 500
+N = 250
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(y, 0, 0)) 
     return ((cumsum[N:] - cumsum[:-N])*1000 / N)
@@ -19,4 +19,5 @@ plt.xticks([])
 plt.title("Task Runtime Durations Over Time")
 plt.ylabel("Task runtime (milliseconds)", fontsize=18)
 plt.xlabel("Time", fontsize=18)
-plt.show()
+plt.savefig('plots/task_runtime_over_time.png')
+# plt.show()
