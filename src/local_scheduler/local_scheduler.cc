@@ -1426,6 +1426,7 @@ remove_local_scheduler(
 }
 
 void process_new_db_client(DBClient *db_client, void *user_context) {
+  std::cout<<"process_new_db_client : "<<std::endl; 
   LocalSchedulerState *state = (LocalSchedulerState *) user_context;
   RAY_LOG(DEBUG) << "db client table callback for db client = "
                  << db_client->id;
@@ -1487,6 +1488,7 @@ void start_server(
   /* Subscribe to notifications about new local schedulers. TODO(rkn): this
    * needs to also get all of the clients that registered with the database
    * before this call to subscribe. */
+  std::cout<<"Local scheduler: subscribing to db client table"<<std::endl;
   db_client_table_subscribe(g_state->db, process_new_db_client,
                             (void *) g_state, NULL, NULL, NULL);
 

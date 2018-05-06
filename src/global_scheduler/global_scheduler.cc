@@ -218,6 +218,8 @@ void process_task_waiting(Task *waiting_task, void *user_context) {
 void add_local_scheduler(GlobalSchedulerState *state,
                          DBClientID db_client_id,
                          const char *manager_address) {
+
+  std::cout<<"Global Scheduler: Adding local scheduler" <<std::endl;
   /* Add plasma_manager ip:port -> local_scheduler_db_client_id association to
    * state. */
   state->plasma_local_scheduler_map[std::string(manager_address)] =
