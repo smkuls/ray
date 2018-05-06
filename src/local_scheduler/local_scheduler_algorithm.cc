@@ -1527,9 +1527,11 @@ void handle_task_scheduled(LocalSchedulerState *state,
   // scheduler that has 0 CPUs.
   RAY_CHECK(state->static_resources["CPU"] != 0);
 
-  // Push the task to the appropriate queue.
-  queue_task_locally(state, algorithm_state, execution_spec, true);
-  dispatch_tasks(state, algorithm_state);
+  send_task_to_random_local_worker(state, algorithm_state, execution_spec);
+// Comment this out for now 
+//  // Push the task to the appropriate queue.
+//  queue_task_locally(state, algorithm_state, execution_spec, true);
+//  dispatch_tasks(state, algorithm_state);
 }
 
 void handle_actor_task_scheduled(LocalSchedulerState *state,
