@@ -13,7 +13,7 @@
 
 using namespace ray;
 
-const int MAX_SPILLBACKS = 2;
+const int MAX_SPILLBACKS = 3;
 
 typedef char TaskSpec;
 
@@ -50,6 +50,9 @@ class TaskExecutionSpec {
   ///
   /// @return The spillback count for this task.
   int SpillbackCount() const;
+
+  /// @return The spillback count for this task.
+  int RawSpillbackCount() const;
 
   /// Increment the spillback count for this task.
   ///

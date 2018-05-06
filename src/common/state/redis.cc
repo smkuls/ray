@@ -948,7 +948,7 @@ void redis_task_table_add_task(TableCallbackData *callback_data) {
       task_id.data(), sizeof(task_id), state, local_scheduler_id.data(),
       sizeof(local_scheduler_id), fbb.GetBufferPointer(),
       (size_t) fbb.GetSize(),
-      static_cast<int>(execution_spec->SpillbackCount()), spec,
+      static_cast<int>(execution_spec->RawSpillbackCount()), spec,
       execution_spec->SpecSize());
   if ((status == REDIS_ERR) || context->err) {
     LOG_REDIS_DEBUG(context, "error in redis_task_table_add_task");
@@ -1014,7 +1014,7 @@ void redis_task_table_update(TableCallbackData *callback_data) {
       task_id.data(), sizeof(task_id), state, local_scheduler_id.data(),
       sizeof(local_scheduler_id), fbb.GetBufferPointer(),
       (size_t) fbb.GetSize(),
-      static_cast<int>(execution_spec->SpillbackCount()));
+      static_cast<int>(execution_spec->RawSpillbackCount()));
   if ((status == REDIS_ERR) || context->err) {
     LOG_REDIS_DEBUG(context, "error in redis_task_table_update");
   }

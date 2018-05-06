@@ -449,6 +449,9 @@ int64_t TaskExecutionSpec::SpecSize() const {
   return task_spec_size_;
 }
 
+int TaskExecutionSpec::RawSpillbackCount() const {
+  return spillback_count_;
+}
 int TaskExecutionSpec::SpillbackCount() const {
   return getSecondInt(spillback_count_);
 }

@@ -46,6 +46,8 @@ class TaskExecutionSpecification {
   /// \return The spillback count for this task.
   int SpillbackCount() const;
 
+  int RawSpillbackCount() const;
+
   /// Increment the spillback count for this task.
   void IncrementSpillbackCount();
 

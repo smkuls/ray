@@ -14,6 +14,9 @@ namespace {
 std::shared_ptr<TaskTableDataT> MakeTaskTableData(const TaskExecutionSpec &execution_spec,
                                                   const ClientID &local_scheduler_id,
                                                   SchedulingState scheduling_state) {
+  std::cout<<"Raw spill back count "<<execution_spec.RawSpillbackCount()<<std::endl;
+  std::cout<<"Normal spill back count "<<execution_spec.SpillbackCount()<<std::endl;
+
   auto data = std::make_shared<TaskTableDataT>();
   data->scheduling_state = scheduling_state;
   data->task_info = std::string(execution_spec.Spec(), execution_spec.SpecSize());
@@ -26,8 +29,7 @@ std::shared_ptr<TaskTableDataT> MakeTaskTableData(const TaskExecutionSpec &execu
 
   data->execution_dependencies =
       std::string((const char *)fbb.GetBufferPointer(), fbb.GetSize());
-  data->spillback_count = execution_spec.SpillbackCount();
-
+  data->spillback_count = execution_spec.RawSpillbackCount();
   return data;
 }
 

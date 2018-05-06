@@ -33,6 +33,9 @@ void TaskExecutionSpecification::SetExecutionDependencies(
 }
 
 
+int TaskExecutionSpecification::RawSpillbackCount() const { 
+   return spillback_count_;
+}
 int TaskExecutionSpecification::SpillbackCount() const { 
 std::cout<<"raylet invoked" <<std::endl;
 return getSecondInt_raylet(spillback_count_); }

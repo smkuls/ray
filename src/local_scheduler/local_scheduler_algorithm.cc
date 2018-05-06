@@ -1345,7 +1345,6 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
                            SchedulingAlgorithmState *algorithm_state,
                            TaskExecutionSpec &execution_spec) {
 
- 
   //TaskSpec *task_spec = execution_spec.Spec();
 
   std::vector<DBClientID> feasible_nodes;
@@ -1378,8 +1377,8 @@ bool send_task_to_random_local_worker(LocalSchedulerState *state,
 
   std::cout<<"sending task to random local worker, load: "<<load<<", currload: "<<currload<<" : spillback: "<<execution_spec.SpillbackCount()<<std::endl;
 
-  //if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || load > currload) {
-  if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS) {
+  if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS || (load > currload && execution_spec.SpillbackCount() > 0)) { //skip the first node
+  //if (local_scheduler_id == get_db_client_id(state->db) || execution_spec.SpillbackCount() >= MAX_SPILLBACKS) {
     //!TODO this will have to be changed, it should be random
     queue_task_locally(state, algorithm_state, execution_spec, false);
     /* Try to dispatch tasks, since we may have added one to the queue. */
